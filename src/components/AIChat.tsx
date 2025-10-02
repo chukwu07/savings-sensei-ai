@@ -35,10 +35,6 @@ const predefinedQuestions = [
 ];
 
 
-// Groq API constants
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_API_KEY = "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";
-
 export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -50,45 +46,49 @@ export function AIChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Helper to format messages for Groq API
-  const getGroqMessages = () => {
-    // Map local messages to OpenAI format
+  // Helper to format messages for API
+  const getFormattedMessages = () => {
     return messages.map((msg) => ({
       role: msg.sender === "user" ? "user" : "assistant",
       content: msg.content
     }));
   };
 
-  // Call Groq API
+  // Call AI Chat API with user's financial context
   const generateAIResponse = async (userQuery: string): Promise<string> => {
     try {
-      const payload = {
-        model: "llama-3.1-8b-instant", // Updated to supported Groq model
-        messages: [
-          ...getGroqMessages(),
-          { role: "user", content: userQuery }
-        ],
-        stream: false
-      };
-
-      const res = await fetch(GROQ_API_URL, {
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+      
+      const res = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`
+          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          messages: [
+            ...getFormattedMessages(),
+            { role: "user", content: userQuery }
+          ]
+        })
       });
 
       if (!res.ok) {
         const errorData = await res.json();
-        return `❌ Groq API error: ${errorData.error?.message || res.statusText}`;
+        if (res.status === 429) {
+          return "⚠️ Too many requests. Please wait a moment and try again.";
+        }
+        if (res.status === 402) {
+          return "⚠️ AI service requires payment. Please contact support.";
+        }
+        return `❌ Error: ${errorData.error || res.statusText}`;
       }
+      
       const data = await res.json();
-      const aiMsg = data.choices?.[0]?.message?.content;
-      return aiMsg || "❌ No response from Groq API.";
+      return data.content || "❌ No response from AI.";
     } catch (err: any) {
-      return `❌ Error: ${err.message || "Failed to connect to Groq API."}`;
+      console.error("AI chat error:", err);
+      return `❌ Error: ${err.message || "Failed to connect to AI service."}`;
     }
   };
 
