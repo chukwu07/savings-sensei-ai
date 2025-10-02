@@ -187,16 +187,16 @@ export function AIChat() {
       </Card>
 
       {/* Scrollable Chat Area - 60-70% of screen height */}
-      <Card className="mx-4 flex-1 flex flex-col min-h-0" style={{ maxHeight: '65vh' }}>
+      <Card className="mx-4 flex-1 flex flex-col min-h-0 overflow-hidden" style={{ maxHeight: '65vh' }}>
         <CardHeader className="pb-3 flex-shrink-0">
           <CardTitle className="text-base flex items-center gap-2">
             <Bot className="h-4 w-4" />
             Conversation
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 p-0">
-          <ScrollArea className="h-full">
-            <div className="space-y-4 px-4 pb-4 pr-6">
+        <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
+          <ScrollArea className="h-full w-full">
+            <div className="space-y-4 p-4 pr-6">
               {/* AI Greeting - Only show if no messages */}
               {messages.length === 0 && (
                 <div className="bg-muted/50 rounded-lg p-4">
@@ -221,7 +221,7 @@ export function AIChat() {
                   className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[75%] p-4 rounded-lg max-h-[400px] overflow-y-auto ${
+                    className={`max-w-[70%] p-4 rounded-lg max-h-[400px] overflow-y-auto overflow-x-hidden ${
                       message.sender === "user"
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted"
@@ -231,8 +231,8 @@ export function AIChat() {
                       {message.sender === "ai" && (
                         <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       )}
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      <div className="space-y-1 min-w-0 flex-1 overflow-hidden">
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words word-break-break-word">
                           {message.content}
                         </p>
                         <p className={`text-xs ${message.sender === "user" ? "opacity-70" : "text-muted-foreground"}`}>
