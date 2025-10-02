@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Send, Bot, Sparkles, ShoppingCart, DollarSign, Plane, Scissors, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
+import { supabase } from "@/integrations/supabase/client";
 
 
 interface Message {
@@ -57,35 +58,34 @@ export function AIChat() {
   // Call AI Chat API with user's financial context
   const generateAIResponse = async (userQuery: string): Promise<string> => {
     try {
-      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      const res = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
+      if (sessionError || !session) {
+        console.error("Session error:", sessionError);
+        return "❌ Please sign in to use AI chat.";
+      }
+
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: {
           messages: [
             ...getFormattedMessages(),
             { role: "user", content: userQuery }
           ]
-        })
+        }
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        if (res.status === 429) {
+      if (error) {
+        console.error("AI chat error:", error);
+        if (error.message?.includes('429')) {
           return "⚠️ Too many requests. Please wait a moment and try again.";
         }
-        if (res.status === 402) {
+        if (error.message?.includes('402')) {
           return "⚠️ AI service requires payment. Please contact support.";
         }
-        return `❌ Error: ${errorData.error || res.statusText}`;
+        return `❌ Error: ${error.message}`;
       }
       
-      const data = await res.json();
-      return data.content || "❌ No response from AI.";
+      return data?.content || "❌ No response from AI.";
     } catch (err: any) {
       console.error("AI chat error:", err);
       return `❌ Error: ${err.message || "Failed to connect to AI service."}`;
