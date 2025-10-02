@@ -196,7 +196,7 @@ export function AIChat() {
         </CardHeader>
         <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
           <ScrollArea className="h-full w-full">
-            <div className="space-y-4 p-4 pr-6">
+            <div className="space-y-4 pt-6 px-4 pb-4 pr-6">
               {/* AI Greeting - Only show if no messages */}
               {messages.length === 0 && (
                 <div className="bg-muted/50 rounded-lg p-4">
