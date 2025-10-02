@@ -194,9 +194,9 @@ export function AIChat() {
             Conversation
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 px-0">
-          <ScrollArea className="h-full px-4 pr-2">
-            <div className="space-y-4 pr-2">
+        <CardContent className="flex-1 min-h-0 p-0">
+          <ScrollArea className="h-full">
+            <div className="space-y-4 px-4 pb-4 pr-6">
               {/* AI Greeting - Only show if no messages */}
               {messages.length === 0 && (
                 <div className="bg-muted/50 rounded-lg p-4">
@@ -221,10 +221,10 @@ export function AIChat() {
                   className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] p-4 rounded-lg max-h-[400px] overflow-y-auto ${
+                    className={`max-w-[75%] p-4 rounded-lg max-h-[400px] overflow-y-auto ${
                       message.sender === "user"
-                        ? "bg-primary text-primary-foreground mr-1"
-                        : "bg-muted ml-1"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
                     }`}
                   >
                     <div className="flex items-start gap-2">
