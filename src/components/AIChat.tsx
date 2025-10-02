@@ -216,22 +216,30 @@ export function AIChat() {
 
               {/* Messages */}
               {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[70%] p-4 rounded-lg max-h-[400px] overflow-y-auto overflow-x-hidden ${
-                      message.sender === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      {message.sender === "ai" && (
-                        <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      )}
-                      <div className="space-y-1 min-w-0 flex-1 overflow-hidden">
+                <div key={message.id} className="flex items-start gap-3">
+                  {/* Icon on the left for both user and AI */}
+                  <div className="flex-shrink-0 mt-1">
+                    {message.sender === "user" ? (
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-primary-foreground text-sm font-medium">U</span>
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <Bot className="h-4 w-4 text-foreground" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Message bubble */}
+                  <div className="flex-1 min-w-0 max-w-[85%]">
+                    <div
+                      className={`p-4 rounded-lg max-h-[400px] overflow-y-auto overflow-x-hidden ${
+                        message.sender === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground"
+                      }`}
+                    >
+                      <div className="space-y-1">
                         <p className="text-sm leading-relaxed whitespace-pre-wrap break-words word-break-break-word">
                           {message.content}
                         </p>
@@ -249,15 +257,17 @@ export function AIChat() {
 
               {/* Typing Indicator */}
               {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Bot className="h-4 w-4" />
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse" style={{ animationDelay: "0.2s" }}></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse" style={{ animationDelay: "0.4s" }}></div>
-                      </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <Bot className="h-4 w-4 text-foreground" />
+                    </div>
+                  </div>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse"></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse" style={{ animationDelay: "0.2s" }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse" style={{ animationDelay: "0.4s" }}></div>
                     </div>
                   </div>
                 </div>
