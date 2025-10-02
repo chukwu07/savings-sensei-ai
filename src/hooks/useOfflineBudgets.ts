@@ -52,6 +52,7 @@ export function useOfflineBudgets() {
         user_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        _alertSent: false,
       };
 
       const result = await OfflineStorageService.addBudget(newBudget);

@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, Sparkles, ShoppingCart, DollarSign, Plane, Scissors } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Send, Bot, Sparkles, ShoppingCart, DollarSign, Plane, Scissors, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 
 
 interface Message {
@@ -42,6 +44,7 @@ export function AIChat() {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { subscribed } = usePremiumFeatures();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,142 +132,163 @@ export function AIChat() {
   };
 
   return (
-    <div className="h-[100vh] flex flex-col bg-gray-50 px-4 pb-4">
-      {/* Header (Top Section) */}
-      <div className="pt-6 pb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-5 w-5 text-blue-500" />
-          <h1 className="text-xl font-bold text-gray-900">AI Assistant</h1>
-        </div>
-        <p className="text-sm text-gray-600">Your smart money guide powered by AI</p>
-      </div>
-
-      {/* AI Chat Greeting (Card/Bubble Style) */}
-      <div className="mb-6">
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              💬
-            </div>
-            <div>
-              <p className="text-base text-gray-900 leading-relaxed">
-                Hi, I'm your BudgetBuddy AI. I can help you understand spending, boost savings, and reach your goals.
-              </p>
-              <p className="text-base text-gray-900 leading-relaxed mt-1 font-medium">
-                What would you like to know?
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Messages Area - Scrollable */}
-      <div className="flex-1 mb-6 min-h-0">
-        <ScrollArea className="h-full">
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] p-3 rounded-2xl ${
-                    message.sender === "user"
-                      ? "bg-blue-500 text-white"
-                      : "bg-white shadow-sm"
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    {message.sender === "ai" && (
-                      <Bot className="h-4 w-4 mt-0.5 text-blue-500" />
-                    )}
-                    <div className="space-y-1">
-                      <p className="text-sm leading-relaxed whitespace-pre-line">
-                        {message.content}
-                      </p>
-                      <p className={`text-xs ${message.sender === "user" ? "text-blue-100" : "text-gray-500"}`}>
-                        {message.timestamp.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+    <div className="flex flex-col h-full pb-4 space-y-4">
+      {/* Header with Logo, Title, Subtitle, and Premium Badge */}
+      <Card className="mx-4">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Sparkles className="h-6 w-6 text-primary" />
               </div>
-            ))}
-
-            {/* Typing Indicator */}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-white p-3 rounded-2xl shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Bot className="h-4 w-4 text-blue-500" />
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-gentle-pulse"></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-gentle-pulse" style={{ animationDelay: "0.2s" }}></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-gentle-pulse" style={{ animationDelay: "0.4s" }}></div>
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <CardTitle className="text-lg">AI Assistant</CardTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">Your smart money guide</p>
               </div>
+            </div>
+            {subscribed && (
+              <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 flex items-center gap-1">
+                <Crown className="h-3 w-3" />
+                Premium
+              </Badge>
             )}
-            <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
-      </div>
+        </CardHeader>
+      </Card>
 
-      {/* Quick Questions Section */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-base font-medium text-gray-900">⚡ Quick Questions</span>
-        </div>
-        <ScrollArea className="w-full">
-          <div className="flex gap-3 pb-2">
-            {predefinedQuestions.map((question, index) => {
-              const IconComponent = question.icon;
-              return (
-                <div
-                  key={index}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors min-w-[280px] flex-shrink-0"
-                  onClick={() => handleQuickQuestion(question.text)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <IconComponent className="h-4 w-4 text-blue-500" />
+      {/* Quick Questions Section - Now at Top */}
+      <Card className="mx-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            Quick Questions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {predefinedQuestions.map((question, index) => {
+            const IconComponent = question.icon;
+            return (
+              <Button
+                key={index}
+                variant="outline"
+                className="w-full justify-start h-auto py-3 px-4 text-left"
+                onClick={() => handleQuickQuestion(question.text)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                    <IconComponent className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium whitespace-normal">{question.text}</span>
+                </div>
+              </Button>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Scrollable Chat Area - 60-70% of screen height */}
+      <Card className="mx-4 flex-1 flex flex-col min-h-0" style={{ maxHeight: '65vh' }}>
+        <CardHeader className="pb-3 flex-shrink-0">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bot className="h-4 w-4" />
+            Conversation
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 min-h-0 px-0">
+          <ScrollArea className="h-full px-4">
+            <div className="space-y-4">
+              {/* AI Greeting - Only show if no messages */}
+              {messages.length === 0 && (
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Bot className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-sm leading-relaxed">
+                        Hi, I'm your BudgetBuddy AI. I can help you understand spending, boost savings, and reach your goals.
+                      </p>
+                      <p className="text-sm font-medium">
+                        What would you like to know?
+                      </p>
                     </div>
-                    <p className="text-sm font-medium text-gray-900 leading-tight">
-                      {question.text}
-                    </p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
-      </div>
+              )}
 
-      {/* Input Section (Anchored at Bottom) */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
+              {/* Messages */}
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[85%] p-3 rounded-lg ${
+                      message.sender === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      {message.sender === "ai" && (
+                        <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      )}
+                      <div className="space-y-1">
+                        <p className="text-sm leading-relaxed whitespace-pre-line">
+                          {message.content}
+                        </p>
+                        <p className={`text-xs ${message.sender === "user" ? "opacity-70" : "text-muted-foreground"}`}>
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Typing Indicator */}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-muted p-3 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-4 w-4" />
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse" style={{ animationDelay: "0.2s" }}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-gentle-pulse" style={{ animationDelay: "0.4s" }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Chat Entry Field - Bottom */}
+      <Card className="mx-4">
+        <CardContent className="p-3">
+          <div className="flex gap-2">
             <Input
               placeholder="Ask me anything about your money…"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="pr-12 h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="flex-1"
             />
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isTyping}
-              className="absolute right-2 top-2 h-8 w-8 rounded-full bg-blue-500 hover:bg-blue-600 p-0"
+              size="icon"
             >
-              <Send className="h-4 w-4 text-white" />
+              <Send className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

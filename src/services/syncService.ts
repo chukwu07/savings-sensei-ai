@@ -83,7 +83,8 @@ export class SyncService {
             await OfflineStorageService.offlineDB.budgets.put({
               ...budget,
               synced: true,
-              pending_sync: false
+              pending_sync: false,
+              _alertSent: false
             });
           }
         }
