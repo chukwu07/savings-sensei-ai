@@ -1,0 +1,375 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 210 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 20% 15%;
+
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 208 13% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Authentication specific colors */
+    --auth-google: 4 69% 54%;
+    --auth-google-foreground: 0 0% 100%;
+    --auth-background: 0 0% 100%;
+    --auth-text-secondary: 208 13% 45%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 210 10% 45%;
+
+    --accent: 160 60% 50%;
+    --accent-foreground: 210 20% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 210 20% 90%;
+    --input: 210 20% 96%;
+    --ring: 210 100% 56%;
+
+    /* Finance App Specific Colors */
+    --success: 160 60% 50%;
+    --success-foreground: 210 20% 98%;
+    --warning: 45 100% 60%;
+    --warning-foreground: 210 20% 15%;
+    --info: 210 100% 56%;
+    --info-foreground: 210 20% 98%;
+
+    /* Page-Specific Theme Colors */
+    --home-primary: 142 71% 45%;        /* Green for finance overview */
+    --home-accent: 0 84% 60%;          /* Red for expenses */
+    --budget-primary: 38 92% 50%;       /* Amber for budget alerts */
+    --budget-accent: 217 91% 60%;       /* Blue for progress */
+    --goals-primary: 271 81% 56%;       /* Purple for achievements */
+    --goals-accent: 142 71% 45%;        /* Green for success */
+    --moneyhub-primary: 210 100% 56%;   /* Blue for money transactions */
+    --moneyhub-accent: 220 90% 65%;     /* Light blue for accents */
+    --settings-primary: 221 83% 53%;    /* Blue for utility */
+    --settings-accent: 215 20% 65%;     /* Neutral for sections */
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 56%), hsl(220 90% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 25% 97%), hsl(210 20% 95%));
+    --gradient-success: linear-gradient(135deg, hsl(160 60% 50%), hsl(170 55% 60%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 98%));
+    --gradient-background: linear-gradient(180deg, hsl(210 20% 98%), hsl(210 25% 95%));
+    --gradient-home: linear-gradient(135deg, hsl(var(--home-primary)), hsl(var(--home-accent)));
+    --gradient-budget: linear-gradient(135deg, hsl(var(--budget-primary)), hsl(var(--budget-accent)));
+    --gradient-goals: linear-gradient(135deg, hsl(var(--goals-primary)), hsl(var(--goals-accent)));
+    --gradient-moneyhub: linear-gradient(135deg, hsl(var(--moneyhub-primary)), hsl(var(--moneyhub-accent)));
+    --gradient-settings: linear-gradient(135deg, hsl(var(--settings-primary)), hsl(var(--settings-accent)));
+
+    /* Shadows */
+    --shadow-card: 0 2px 10px -2px hsl(210 20% 15% / 0.1);
+    --shadow-elegant: 0 10px 30px -10px hsl(210 100% 56% / 0.3);
+    --shadow-elevated: 0 8px 30px -8px hsl(210 20% 15% / 0.15);
+    --shadow-glow: 0 0 20px hsl(210 100% 56% / 0.2);
+
+    /* Base font and spacing - Mobile optimized */
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --radius: 0.75rem;
+    
+    /* Mobile-first spacing system */
+    --spacing-touch: 1rem; /* 16px - minimum touch target spacing */
+    --spacing-comfortable: 1.5rem; /* 24px - comfortable mobile spacing */
+    --spacing-section: 2rem; /* 32px - section spacing */
+    
+    /* Mobile-optimized sizes */
+    --touch-target-min: 2.75rem; /* 44px - Apple/iOS minimum */
+    --touch-target-comfortable: 3rem; /* 48px - comfortable touch */
+    --mobile-header: 3.5rem; /* 56px - mobile header height */
+    --mobile-bottom-nav: 4rem; /* 64px - bottom navigation height */
+    
+    /* Safe area for iOS devices */
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+
+    /* Premium Organic Design Variables */
+    --organic-radius: 2rem;
+    --organic-radius-lg: 2.5rem;
+    --organic-spacing: 0.75rem;
+    --mobile-edge-padding: 0.75rem;
+
+    /* Premium Shadows - Multi-layered */
+    --shadow-organic: 0 4px 12px -2px hsl(var(--primary) / 0.1), 
+                      0 8px 32px -8px hsl(var(--primary) / 0.15),
+                      0 0 0 1px hsl(var(--border) / 0.05);
+    --shadow-organic-hover: 0 8px 24px -4px hsl(var(--primary) / 0.15), 
+                            0 16px 48px -12px hsl(var(--primary) / 0.2),
+                            0 0 0 1px hsl(var(--primary) / 0.1);
+    --shadow-floating: 0 12px 40px -8px hsl(var(--primary) / 0.25), 
+                       0 4px 16px -4px hsl(var(--primary) / 0.1);
+
+    /* Premium Gradients - Enhanced */
+    --gradient-organic-primary: linear-gradient(135deg, 
+      hsl(var(--primary) / 0.9), 
+      hsl(var(--primary) / 0.95));
+    --gradient-organic-glass: linear-gradient(135deg,
+      hsl(var(--background) / 0.95),
+      hsl(var(--background) / 0.85));
+    --gradient-floating-orb: radial-gradient(circle at 30% 20%,
+      hsl(var(--primary) / 0.1),
+      transparent 60%);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 210 20% 8%;
+    --foreground: 210 20% 95%;
+
+    --card: 210 20% 10%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 210 20% 10%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 210 100% 60%;
+    --primary-foreground: 210 20% 8%;
+
+    --secondary: 210 20% 15%;
+    --secondary-foreground: 210 20% 95%;
+
+    --muted: 210 20% 15%;
+    --muted-foreground: 210 10% 60%;
+
+    --accent: 160 60% 55%;
+    --accent-foreground: 210 20% 8%;
+
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 210 20% 95%;
+
+    --border: 210 20% 20%;
+    --input: 210 20% 15%;
+    --ring: 210 100% 60%;
+
+    /* Finance App Specific Colors - Dark */
+    --success: 160 60% 55%;
+    --success-foreground: 210 20% 8%;
+    --warning: 45 100% 65%;
+    --warning-foreground: 210 20% 8%;
+    --info: 210 100% 60%;
+    --info-foreground: 210 20% 8%;
+
+    /* Page-Specific Theme Colors - Dark Mode */
+    --home-primary: 142 71% 50%;        /* Brighter green for dark mode */
+    --home-accent: 0 84% 65%;          /* Brighter red for expenses */
+    --budget-primary: 38 92% 55%;       /* Brighter amber for budget alerts */
+    --budget-accent: 217 91% 65%;       /* Brighter blue for progress */
+    --goals-primary: 271 81% 61%;       /* Brighter purple for achievements */
+    --goals-accent: 142 71% 50%;        /* Brighter green for success */
+    --settings-primary: 221 83% 58%;    /* Brighter blue for utility */
+    --settings-accent: 215 20% 70%;     /* Lighter neutral for sections */
+
+    /* Dark Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 60%), hsl(220 90% 70%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 25% 12%), hsl(210 20% 8%));
+    --gradient-success: linear-gradient(135deg, hsl(160 60% 55%), hsl(170 55% 65%));
+    --gradient-card: linear-gradient(145deg, hsl(210 20% 10%), hsl(210 20% 12%));
+    --gradient-background: linear-gradient(180deg, hsl(210 20% 8%), hsl(210 25% 5%));
+    --gradient-home: linear-gradient(135deg, hsl(var(--home-primary)), hsl(var(--home-accent)));
+    --gradient-budget: linear-gradient(135deg, hsl(var(--budget-primary)), hsl(var(--budget-accent)));
+    --gradient-goals: linear-gradient(135deg, hsl(var(--goals-primary)), hsl(var(--goals-accent)));
+    --gradient-settings: linear-gradient(135deg, hsl(var(--settings-primary)), hsl(var(--settings-accent)));
+
+    /* Dark Shadows */
+    --shadow-card: 0 2px 10px -2px hsl(0 0% 0% / 0.3);
+    --shadow-elegant: 0 10px 30px -10px hsl(210 100% 60% / 0.4);
+    --shadow-elevated: 0 8px 30px -8px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 20px hsl(210 100% 60% / 0.3);
+
+    /* Premium Organic Design Variables - Dark Mode */
+    --shadow-organic: 0 4px 12px -2px hsl(var(--primary) / 0.2), 
+                      0 8px 32px -8px hsl(var(--primary) / 0.25),
+                      0 0 0 1px hsl(var(--border) / 0.1);
+    --shadow-organic-hover: 0 8px 24px -4px hsl(var(--primary) / 0.25), 
+                            0 16px 48px -12px hsl(var(--primary) / 0.3),
+                            0 0 0 1px hsl(var(--primary) / 0.15);
+    --shadow-floating: 0 12px 40px -8px hsl(var(--primary) / 0.35), 
+                       0 4px 16px -4px hsl(var(--primary) / 0.2);
+    --gradient-organic-glass: linear-gradient(135deg,
+      hsl(var(--card) / 0.95),
+      hsl(var(--card) / 0.85));
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background: var(--gradient-background);
+    min-height: 100vh;
+    /* Mobile-optimized text sizes */
+    font-size: 1rem; /* 16px base for mobile readability */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Mobile-first typography scale */
+  .text-mobile-xs { font-size: 0.75rem; line-height: 1.5; } /* 12px */
+  .text-mobile-sm { font-size: 0.875rem; line-height: 1.5; } /* 14px */
+  .text-mobile-base { font-size: 1rem; line-height: 1.6; } /* 16px */
+  .text-mobile-lg { font-size: 1.125rem; line-height: 1.5; } /* 18px */
+  .text-mobile-xl { font-size: 1.25rem; line-height: 1.4; } /* 20px */
+  .text-mobile-2xl { font-size: 1.5rem; line-height: 1.3; } /* 24px */
+  .text-mobile-3xl { font-size: 1.875rem; line-height: 1.2; } /* 30px */
+
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    padding: var(--spacing-touch);
+  }
+
+  .touch-comfortable {
+    min-height: var(--touch-target-comfortable);
+    padding: var(--spacing-comfortable);
+  }
+
+  /* Mobile app layout utilities */
+  .mobile-app-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+
+  .mobile-main-content {
+    height: calc(100vh - var(--mobile-header) - var(--mobile-bottom-nav) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--spacing-touch);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Premium Organic Animations */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: var(--shadow-card); }
+    50% { box-shadow: var(--shadow-glow); }
+  }
+
+  @keyframes organic-float {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    33% { transform: translateY(-4px) scale(1.02); }
+    66% { transform: translateY(2px) scale(0.98); }
+  }
+
+  @keyframes gentle-glow {
+    0%, 100% { box-shadow: var(--shadow-organic); }
+    50% { box-shadow: var(--shadow-organic-hover); }
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-organic-float {
+    animation: organic-float 4s ease-in-out infinite;
+  }
+
+  .animate-gentle-glow {
+    animation: gentle-glow 3s ease-in-out infinite;
+  }
+
+  /* Mobile App Layout Utilities */
+  .mobile-edge-padding {
+    padding-left: var(--mobile-edge-padding);
+    padding-right: var(--mobile-edge-padding);
+  }
+
+  .mobile-section-spacing {
+    margin-bottom: 1rem;
+  }
+
+  .mobile-full-width {
+    margin-left: calc(-1 * var(--mobile-edge-padding));
+    margin-right: calc(-1 * var(--mobile-edge-padding));
+    border-radius: 0;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 3px;
+  }
+}
