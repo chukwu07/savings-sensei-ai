@@ -16,8 +16,11 @@ export interface Budget {
 }
 
 export function useBudgets() {
-  // Track which budgets have sent alerts (in-memory, resets on reload)
-  const [alertedBudgets, setAlertedBudgets] = useState<{[id: string]: boolean}>({});
+  // Track which budgets have sent alerts (persisted in localStorage)
+  const [alertedBudgets, setAlertedBudgets] = useState<{[id: string]: boolean}>(() => {
+    const stored = localStorage.getItem('budget_alerts_sent');
+    return stored ? JSON.parse(stored) : {};
+  });
 
   // Helper to send email alert
   // Email send status for UI feedback
@@ -185,12 +188,20 @@ export function useBudgets() {
     fetchBudgets();
   }, [user]);
 
+  // Persist alertedBudgets to localStorage
+  useEffect(() => {
+    localStorage.setItem('budget_alerts_sent', JSON.stringify(alertedBudgets));
+  }, [alertedBudgets]);
+
   // Watch for budgets exceeding 80% and send alert
   useEffect(() => {
+    if (!user?.email) return;
+    
     budgets.forEach((budget) => {
       const percentUsed = Math.round((budget.spent / budget.allocated) * 100);
       // Only send if not already alerted and user email exists
-      if (percentUsed >= 80 && !alertedBudgets[budget.id] && user?.email) {
+      if (percentUsed >= 80 && !alertedBudgets[budget.id]) {
+        console.log(`Budget alert triggered for ${budget.category}: ${percentUsed}% used`);
         sendBudgetAlertEmail(
           user.email,
           budget.allocated,
@@ -203,7 +214,7 @@ export function useBudgets() {
         setAlertedBudgets(prev => ({ ...prev, [budget.id]: true }));
       }
     });
-  }, [user]);
+  }, [budgets, user, alertedBudgets]);
 
   return {
   budgets,
