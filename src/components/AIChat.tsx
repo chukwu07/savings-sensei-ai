@@ -221,7 +221,7 @@ export function AIChat() {
                   className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] p-3 rounded-lg ${
+                    className={`max-w-[80%] p-3 rounded-lg max-h-[400px] overflow-y-auto ${
                       message.sender === "user"
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted"
@@ -231,8 +231,8 @@ export function AIChat() {
                       {message.sender === "ai" && (
                         <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       )}
-                      <div className="space-y-1">
-                        <p className="text-sm leading-relaxed whitespace-pre-line">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                           {message.content}
                         </p>
                         <p className={`text-xs ${message.sender === "user" ? "opacity-70" : "text-muted-foreground"}`}>
