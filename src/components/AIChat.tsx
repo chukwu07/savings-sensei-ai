@@ -188,7 +188,7 @@ export function AIChat() {
       </Card>
 
       {/* Scrollable Chat Area */}
-      <Card className="mx-4 flex-1 flex flex-col min-h-0">
+      <Card className="mx-4 h-96 flex flex-col min-h-0">
         <CardHeader className="pb-3 flex-shrink-0">
           <CardTitle className="text-base flex items-center gap-2">
             <Bot className="h-4 w-4" />
