@@ -14,6 +14,7 @@ import { formatCurrencyShort } from "@/utils/formatters";
 import { useSavingsGoals } from "@/hooks/useSavingsGoals";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { cn } from "@/lib/utils";
 export function SavingsGoals() {
   console.log('SavingsGoals component loading');
   const [newGoal, setNewGoal] = useState({
@@ -438,34 +439,44 @@ export function SavingsGoals() {
                     </div>
                   </EnhancedCard>
 
-                  {/* Progress Visualization */}
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-center justify-between text-mobile-sm">
-                      <span className="text-muted-foreground">Progress to Goal</span>
-                      <span className="font-medium">{Math.round(progress)}%</span>
+                  {/* Enhanced Progress Visualization */}
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">Goal Progress</span>
+                      <span className={cn(
+                        "text-sm font-bold",
+                        progress >= 100 ? "text-success" :
+                        progress >= 75 ? "text-primary" :
+                        progress >= 50 ? "text-blue-600" :
+                        "text-muted-foreground"
+                      )}>
+                        {progress.toFixed(1)}%
+                      </span>
                     </div>
+                    
                     <Progress 
                       value={progress} 
-                      className="h-3 bg-muted rounded-full overflow-hidden"
+                      className={cn(
+                        "h-4 transition-all duration-500 shadow-sm",
+                        progress >= 100 && "animate-pulse"
+                      )}
                     />
-                    <div className="flex justify-between text-mobile-xs text-muted-foreground">
-                      <span>{formatCurrency(goal.current_amount)}</span>
-                      <span>{formatCurrency(goal.target_amount)}</span>
-                    </div>
-                  </div>
-
-
-                  {/* Progress Bar Alternative for Mobile */}
-                  <div className="space-y-2 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">Visual Progress</span>
-                      <span className="text-primary font-bold">{progress.toFixed(1)}%</span>
-                    </div>
-                    <Progress value={progress} className={`h-4 transition-all duration-500 ${progress >= 100 ? 'animate-pulse' : ''}`} />
+                    
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{formatCurrency(goal.current_amount)}</span>
-                      <span>{formatCurrency(goal.target_amount)}</span>
+                      <span className="font-medium">{formatCurrency(goal.current_amount)}</span>
+                      <span className="font-medium">{formatCurrency(goal.target_amount)}</span>
                     </div>
+                    
+                    {/* Progress milestone indicator */}
+                    {progress >= 25 && progress < 100 && (
+                      <div className="flex items-center gap-1 text-xs text-primary">
+                        <span className="font-medium">
+                          {progress >= 75 ? "🎯 Almost there!" :
+                           progress >= 50 ? "⭐ Halfway!" :
+                           "💪 Great start!"}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* AI Insights Enhanced */}
