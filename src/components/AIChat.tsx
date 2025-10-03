@@ -195,9 +195,8 @@ export function AIChat() {
             Conversation
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 p-0">
-          <div className="h-full overflow-y-auto overscroll-contain scroll-smooth px-4">
-            <div className="space-y-4 py-2">
+        <CardContent className="flex-1 min-h-0 overflow-y-auto overscroll-contain scroll-smooth p-4">
+          <div className="space-y-4 py-2">
               {/* AI Greeting - Only show if no messages */}
               {messages.length === 0 && (
                 <div className="bg-muted/50 rounded-lg p-4">
@@ -278,7 +277,6 @@ export function AIChat() {
                   </div>
                 </div>
               )}
-            </div>
           </div>
         </CardContent>
       </Card>
