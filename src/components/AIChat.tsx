@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Bot, Sparkles, ShoppingCart, DollarSign, Plane, Scissors, Crown } from "lucide-react";
+import { Send, Bot, Sparkles, ShoppingCart, DollarSign, Plane, Scissors, Crown, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 import { supabase } from "@/integrations/supabase/client";
@@ -133,7 +133,7 @@ export function AIChat() {
   };
 
   return (
-    <div className="flex flex-col h-full pb-4 space-y-4">
+    <div className="flex flex-col h-full pb-20 space-y-4">
       {/* Header with Logo, Title, Subtitle, and Premium Badge */}
       <Card className="mx-4">
         <CardHeader className="pb-3">
@@ -196,7 +196,7 @@ export function AIChat() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 p-0">
-          <div className="h-full w-full overflow-y-auto">
+          <div className="h-full w-full overflow-y-auto overscroll-contain">
             <div className="space-y-4 p-4 pr-6">
               {/* AI Greeting - Only show if no messages */}
               {messages.length === 0 && (
@@ -223,6 +223,15 @@ export function AIChat() {
                     <div className="flex-shrink-0 mt-1">
                       <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
                         <Bot className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* User icon on the right */}
+                  {message.sender === "user" && (
+                    <div className="flex-shrink-0 mt-1 order-last">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <MessageCircle className="h-5 w-5 text-primary-foreground" />
                       </div>
                     </div>
                   )}

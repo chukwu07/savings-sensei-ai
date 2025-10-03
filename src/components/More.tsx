@@ -71,7 +71,7 @@ export function More() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col overflow-hidden pb-4">
       {/* Mobile Header */}
       <div className="pt-4 px-4">
         <h1 className="text-lg font-bold text-foreground">
@@ -83,8 +83,8 @@ export function More() {
       </div>
 
       {/* Subpage Links as Cards */}
-      <div className="px-4 space-y-3">
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
+      <div className="flex-1 overflow-hidden px-4">
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="h-full flex flex-col overflow-hidden space-y-6">
           <div className="px-4">
             <div className="flex overflow-x-auto gap-2 pb-2">
               <Button
@@ -152,7 +152,7 @@ export function More() {
             <Notifications />
           </TabsContent>
 
-          <TabsContent value="ai">
+          <TabsContent value="ai" className="h-full overflow-hidden">
             <AIChat />
           </TabsContent>
 
