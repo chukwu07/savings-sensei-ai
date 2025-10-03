@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Bot, Sparkles, ShoppingCart, DollarSign, Plane, Scissors, Crown, MessageCircle } from "lucide-react";
+import { Send, Bot, Sparkles, ShoppingCart, DollarSign, Plane, Scissors, Crown, MessageCircle, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,7 +140,7 @@ export function AIChat() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                <Sparkles className="h-6 w-6 text-primary" />
+                <Star className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <CardTitle className="text-lg">AI Assistant</CardTitle>
