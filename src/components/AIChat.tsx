@@ -188,16 +188,9 @@ export function AIChat() {
       </Card>
 
       {/* Scrollable Chat Area */}
-      <Card className="mx-4 flex-1 flex flex-col">
-        <CardHeader className="pb-3 flex-shrink-0">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Bot className="h-4 w-4" />
-            Conversation
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 min-h-0 p-0">
-          <div className="h-full w-full overflow-y-auto overscroll-contain">
-            <div className="space-y-4 p-4 pr-6">
+      <div className="flex-1 flex flex-col mx-4 min-h-0">
+        <div className="flex-1 overflow-y-auto overscroll-contain -mx-4 px-4 scroll-smooth">
+          <div className="space-y-4 py-2">
               {/* AI Greeting - Only show if no messages */}
               {messages.length === 0 && (
                 <div className="bg-muted/50 rounded-lg p-4">
@@ -280,8 +273,7 @@ export function AIChat() {
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
       {/* Chat Entry Field - Bottom */}
       <Card className="mx-4">
