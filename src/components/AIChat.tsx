@@ -40,12 +40,7 @@ export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { subscribed } = usePremiumFeatures();
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   // Helper to format messages for API
   const getFormattedMessages = () => {
@@ -268,7 +263,6 @@ export function AIChat() {
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
         </CardContent>
