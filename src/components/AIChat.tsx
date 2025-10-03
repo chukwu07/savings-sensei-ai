@@ -41,6 +41,13 @@ export function AIChat() {
   const [isTyping, setIsTyping] = useState(false);
   const { subscribed } = usePremiumFeatures();
 
+  // Reset messages when component unmounts or user navigates away
+  useEffect(() => {
+    return () => {
+      setMessages([]);
+    };
+  }, []);
+
   // Helper to format messages for API
   const getFormattedMessages = () => {
     return messages.map((msg) => ({
@@ -188,7 +195,7 @@ export function AIChat() {
             Conversation
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
+        <CardContent className="flex-1 min-h-0 p-0">
           <div className="h-full w-full overflow-y-auto">
             <div className="space-y-4 p-4 pr-6">
               {/* AI Greeting - Only show if no messages */}
