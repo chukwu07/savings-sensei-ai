@@ -230,7 +230,7 @@ export default function Auth() {
           onClick={() => setCurrentScreen('log-in')}
           className="text-sm text-muted-foreground hover:text-foreground underline"
         >
-          Already have an account? Log In
+          Sign in with Email
         </button>
       </div>
 
