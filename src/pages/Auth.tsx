@@ -196,7 +196,7 @@ export default function Auth() {
         className="w-full h-14 text-lg font-semibold mb-4 bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-glow"
         size="lg"
       >
-        Sign In
+        Sign in with Email
       </Button>
 
       <Button
@@ -230,7 +230,7 @@ export default function Auth() {
           onClick={() => setCurrentScreen('log-in')}
           className="text-sm text-muted-foreground hover:text-foreground underline"
         >
-          Sign in with Email
+          Already have an account? Log In
         </button>
       </div>
 
