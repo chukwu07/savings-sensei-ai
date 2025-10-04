@@ -125,12 +125,24 @@ export default function Auth() {
     setCurrentScreen('loading');
     setLoadingMessage("Connecting to Google...");
     
-    const { error } = await signInWithGoogle();
-    
-    if (error) {
+    try {
+      const { error } = await signInWithGoogle();
+      
+      if (error) {
+        console.error('Google Sign-In Error:', error);
+        toast({
+          title: "Google Sign-In Failed",
+          description: error.message || "Please try again.",
+          variant: "destructive"
+        });
+        setCurrentScreen('sign-in');
+      }
+      // If no error, the OAuth flow will redirect and onAuthStateChange will handle the rest
+    } catch (err) {
+      console.error('Google Sign-In Exception:', err);
       toast({
-        title: "Google Sign-In Failed",
-        description: error.message || "Please try again.",
+        title: "Google Sign-In Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
       setCurrentScreen('sign-in');
