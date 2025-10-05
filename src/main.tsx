@@ -4,6 +4,6 @@ import './index.css'
 import emailjs from '@emailjs/browser';
 
 // Initialize EmailJS with public key
-emailjs.init('oEFATUkrPGUAdS4Ut');
+emailjs.init('hL3nMQlolokYINVc7');
 
 createRoot(document.getElementById("root")!).render(<App />);

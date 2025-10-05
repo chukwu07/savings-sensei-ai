@@ -28,13 +28,13 @@ export function useBudgets() {
 
   const sendBudgetAlertEmail = (userEmail: string, budget: number, spent: number, remaining: number, name: string, category: string, percent: number) => {
     emailjs.send(
-      'service_iuoqkk8',
+      'service_qjr2kr6',
       'template_diuwmud',
       {
         email: userEmail,
-        from_name: 'Savings Sensei',
-        from_email: 'noreply@savingssensei.com',
-        reply_to: '420bilall@gmail.com',
+        from_name: 'Budget Buddy',
+        from_email: 'info.helpstep@gmail.com',
+        reply_to: 'info.helpstep@gmail.com',
         name,
         category,
         percent,
@@ -42,7 +42,7 @@ export function useBudgets() {
         spent,
         remaining,
       },
-      'oEFATUkrPGUAdS4Ut'
+      'hL3nMQlolokYINVc7'
     ).then(
       (result) => {
         setEmailStatus({ success: true, message: 'Budget alert email sent successfully!' });
