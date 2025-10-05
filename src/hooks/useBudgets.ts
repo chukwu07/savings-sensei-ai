@@ -29,7 +29,7 @@ export function useBudgets() {
   const sendBudgetAlertEmail = (userEmail: string, budget: number, spent: number, remaining: number, name: string, category: string, percent: number) => {
     emailjs.send(
       'service_qjr2kr6',
-      'template_diuwmud',
+      'template_4baxleq',
       {
         email: userEmail,
         from_name: 'Budget Buddy',
