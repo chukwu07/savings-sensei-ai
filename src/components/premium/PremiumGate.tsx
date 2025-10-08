@@ -4,7 +4,7 @@ import { UpgradePrompt } from './UpgradePrompt';
 
 interface PremiumGateProps {
   children: React.ReactNode;
-  feature: 'exportReports' | 'advancedAnalytics' | 'prioritySupport';
+  feature: 'advancedAnalytics' | 'prioritySupport';
   fallback?: React.ReactNode;
 }
 
@@ -30,8 +30,6 @@ export function PremiumGate({ children, feature, fallback }: PremiumGateProps) {
 
 function getFeatureTitle(feature: string): string {
   switch (feature) {
-    case 'exportReports':
-      return 'Export Reports';
     case 'advancedAnalytics':
       return 'Advanced Analytics';
     case 'prioritySupport':
@@ -43,8 +41,6 @@ function getFeatureTitle(feature: string): string {
 
 function getFeatureDescription(feature: string): string {
   switch (feature) {
-    case 'exportReports':
-      return 'Export your financial data to PDF and CSV formats';
     case 'advancedAnalytics':
       return 'Get detailed insights and forecasting for your spending patterns';
     case 'prioritySupport':

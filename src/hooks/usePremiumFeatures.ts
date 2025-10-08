@@ -3,7 +3,6 @@ import { usePremium } from '@/contexts/PremiumContext';
 export interface PremiumLimits {
   aiChatMessages: number;
   savingsGoals: number;
-  exportReports: boolean;
   advancedAnalytics: boolean;
   prioritySupport: boolean;
 }
@@ -14,7 +13,6 @@ export function usePremiumFeatures() {
   const limits: PremiumLimits = {
     aiChatMessages: subscribed ? -1 : 10, // -1 = unlimited, 10 = daily limit for free
     savingsGoals: subscribed ? -1 : 3, // -1 = unlimited, 3 = max for free
-    exportReports: subscribed,
     advancedAnalytics: subscribed,
     prioritySupport: subscribed,
   };
