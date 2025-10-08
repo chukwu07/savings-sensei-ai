@@ -30,9 +30,6 @@ export function PricingScreen() {
       name: 'Multi-account Sync',
       included: false
     }, {
-      name: 'Export Reports',
-      included: false
-    }, {
       name: 'Advanced Analytics',
       included: false
     }, {
@@ -53,9 +50,6 @@ export function PricingScreen() {
       included: true
     }, {
       name: 'Multi-account Sync',
-      included: true
-    }, {
-      name: 'Export Reports (PDF/CSV)',
       included: true
     }, {
       name: 'Advanced Analytics',
