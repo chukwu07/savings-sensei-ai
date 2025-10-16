@@ -132,7 +132,7 @@ export function PricingScreen() {
                 Manage Subscription
               </Button> : <Button onClick={() => createCheckout()} className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
                 <Zap className="h-4 w-4 mr-2" />
-                Start Free Trial
+                Subscribe Now
               </Button>}
           </div>
         </EnhancedCard>
