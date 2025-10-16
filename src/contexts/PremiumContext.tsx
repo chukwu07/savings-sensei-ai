@@ -46,8 +46,6 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       setIsLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       
-      // For now, skip Stripe integration and default to premium for testing
-      // This ensures the app works without Stripe configuration for Play Store launch
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
@@ -55,23 +53,20 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       });
       
       if (error) {
-        // For Play Store launch, gracefully handle Stripe integration issues
-        // Default to premium tier for all users during initial launch
-        console.warn('Subscription check failed, defaulting to premium for launch:', error);
-        setSubscribed(true);
-        setSubscriptionTier('Premium');
+        console.error('Subscription check failed:', error);
+        setSubscribed(false);
+        setSubscriptionTier(null);
         setSubscriptionEnd(null);
         return;
       }
 
-      setSubscribed(data.subscribed || true);
-      setSubscriptionTier(data.subscription_tier || 'Premium');
+      setSubscribed(data.subscribed || false);
+      setSubscriptionTier(data.subscription_tier || null);
       setSubscriptionEnd(data.subscription_end || null);
     } catch (error) {
-      // For Play Store launch, gracefully handle errors and default to premium
-      console.warn('Subscription check error, defaulting to premium for launch:', error);
-      setSubscribed(true);
-      setSubscriptionTier('Premium');
+      console.error('Subscription check error:', error);
+      setSubscribed(false);
+      setSubscriptionTier(null);
       setSubscriptionEnd(null);
     } finally {
       setIsLoading(false);
@@ -112,6 +107,12 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       
       if (error) {
         console.error('Error opening customer portal:', error);
+        // Check if it's a "no subscription" error
+        if (error.message?.includes('No active subscription') || data?.needsSubscription) {
+          alert('You need to subscribe first before managing your subscription.');
+        } else {
+          alert('Unable to open subscription management. Please try again later.');
+        }
         return;
       }
 
@@ -120,6 +121,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       }
     } catch (error) {
       console.error('Error in openCustomerPortal:', error);
+      alert('Unable to open subscription management. Please try again later.');
     }
   };
 
