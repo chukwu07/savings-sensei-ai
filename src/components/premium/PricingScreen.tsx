@@ -3,13 +3,29 @@ import { Button } from '@/components/ui/button';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { Check, X, Crown, Zap } from 'lucide-react';
 import { usePremium } from '@/contexts/PremiumContext';
+import { getPricingPlans } from '@/lib/stripe-pricing';
+import { PaymentDialog } from './PaymentDialog';
+import type { PricingPlan } from '@/lib/stripe-pricing';
 import { PremiumBadge } from './PremiumBadge';
 export function PricingScreen() {
-  const {
-    subscribed,
-    createCheckout,
-    openCustomerPortal
-  } = usePremium();
+  const { subscribed, openCustomerPortal, checkSubscription } = usePremium();
+  const [paymentDialogOpen, setPaymentDialogOpen] = React.useState(false);
+  const [selectedPlan, setSelectedPlan] = React.useState<PricingPlan | null>(null);
+  
+  const pricingPlans = getPricingPlans();
+  const monthlyPlan = pricingPlans.find(p => p.interval === 'month')!;
+  const yearlyPlan = pricingPlans.find(p => p.interval === 'year')!;
+
+  const handleSubscribe = (plan: PricingPlan) => {
+    setSelectedPlan(plan);
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    await checkSubscription();
+    setPaymentDialogOpen(false);
+    setSelectedPlan(null);
+  };
   const features = {
     free: [{
       name: 'Basic Budgeting',
@@ -130,7 +146,7 @@ export function PricingScreen() {
             {subscribed ? <Button onClick={() => openCustomerPortal()} className="w-full" variant="outline">
                 <Crown className="h-4 w-4 mr-2" />
                 Manage Subscription
-              </Button> : <Button onClick={() => createCheckout()} className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
+              </Button> : <Button onClick={() => handleSubscribe(monthlyPlan)} className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
                 <Zap className="h-4 w-4 mr-2" />
                 Subscribe Now
               </Button>}
@@ -149,5 +165,14 @@ export function PricingScreen() {
           <span>Instant activation</span>
         </div>
       </div>
+
+      {selectedPlan && (
+        <PaymentDialog
+          open={paymentDialogOpen}
+          onOpenChange={setPaymentDialogOpen}
+          plan={selectedPlan}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>;
 }

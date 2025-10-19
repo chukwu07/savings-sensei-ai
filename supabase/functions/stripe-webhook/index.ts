@@ -87,8 +87,51 @@ Deno.serve(async (req) => {
 
     try {
       switch (event.type) {
-        case 'customer.subscription.created':
-        case 'customer.subscription.updated': {
+    case 'payment_intent.succeeded': {
+      const paymentIntent = event.data.object;
+      const userId = paymentIntent.metadata.supabase_user_id;
+      const priceId = paymentIntent.metadata.price_id;
+      const customerId = paymentIntent.customer as string;
+
+      if (!userId || !priceId) {
+        console.error('Missing metadata in payment intent');
+        break;
+      }
+
+      // Create subscription after successful payment
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: priceId }],
+        metadata: {
+          supabase_user_id: userId,
+        },
+      });
+
+      // Update subscriber record
+      const subscriptionEnd = new Date(subscription.current_period_end * 1000);
+      
+      const { error: upsertError } = await supabase
+        .from('subscribers')
+        .upsert({
+          user_id: userId,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+          subscription_status: subscription.status,
+          subscription_tier: 'premium',
+          subscription_start: new Date(subscription.created * 1000).toISOString(),
+          subscription_end: subscriptionEnd.toISOString(),
+        });
+
+      if (upsertError) {
+        console.error('Error upserting subscriber:', upsertError);
+      }
+
+      console.log('✅ Subscription created after payment:', subscription.id);
+      break;
+    }
+
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated': {
           const subscription = event.data.object as Stripe.Subscription;
           logStep('Processing subscription event', {
             subscriptionId: subscription.id,
