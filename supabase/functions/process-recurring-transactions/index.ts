@@ -38,6 +38,26 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the request using CRON_SECRET
+    const authHeader = req.headers.get('Authorization');
+    const cronSecret = Deno.env.get('CRON_SECRET');
+    
+    if (!cronSecret) {
+      console.error('CRON_SECRET not configured');
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+      console.warn('Unauthorized access attempt to process-recurring-transactions');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     console.log('Processing recurring transactions...');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');

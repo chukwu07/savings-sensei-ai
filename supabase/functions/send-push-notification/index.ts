@@ -33,6 +33,22 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Authenticate the request using CRON_SECRET
+  const authHeader = req.headers.get('Authorization');
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  
+  if (!cronSecret) {
+    EdgeSecurityLogger.logSuspiciousActivity(req, 'send-push-notification', 'CRON_SECRET not configured');
+    return createSecureErrorResponse('Server configuration error', 500);
+  }
+  
+  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    EdgeSecurityLogger.logAuthAttempt(req, 'send-push-notification', false, undefined, { reason: 'Invalid or missing CRON_SECRET' });
+    return createSecureErrorResponse('Unauthorized', 401);
+  }
+
+  EdgeSecurityLogger.logAuthAttempt(req, 'send-push-notification', true);
+
   // Rate limiting - max 50 requests per minute per IP
   const rateLimit = await rateLimiter.checkLimit(req, {
     maxRequests: 50,
