@@ -10,6 +10,8 @@ interface PremiumContextType {
   checkSubscription: () => Promise<void>;
   createCheckout: (priceId?: string) => Promise<void>;
   openCustomerPortal: () => Promise<void>;
+  cancelSubscription: () => Promise<void>;
+  getRemainingDays: () => number | null;
 }
 
 const PremiumContext = createContext<PremiumContextType | undefined>(undefined);
@@ -125,6 +127,49 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     }
   };
 
+  const cancelSubscription = async () => {
+    try {
+      // Get the user's subscription from database
+      const { data: subscriptionData, error: fetchError } = await supabase
+        .from('subscribers')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (fetchError || !subscriptionData) {
+        throw new Error('No subscription found');
+      }
+
+      // Update subscription status to cancelled
+      const { error: updateError } = await supabase
+        .from('subscribers')
+        .update({ 
+          subscribed: false,
+          subscription_end: new Date().toISOString()
+        })
+        .eq('user_id', user?.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh subscription status
+      await checkSubscription();
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      throw error;
+    }
+  };
+
+  const getRemainingDays = (): number | null => {
+    if (!subscriptionEnd) return null;
+    
+    const endDate = new Date(subscriptionEnd);
+    const today = new Date();
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
+
   useEffect(() => {
     checkSubscription();
   }, [user]);
@@ -147,6 +192,8 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     checkSubscription,
     createCheckout,
     openCustomerPortal,
+    cancelSubscription,
+    getRemainingDays,
   };
 
   return (

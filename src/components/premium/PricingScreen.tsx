@@ -1,31 +1,24 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
-import { Check, X, Crown, Zap } from 'lucide-react';
+import { Check, X, Crown, Zap, Calendar, XCircle } from 'lucide-react';
 import { usePremium } from '@/contexts/PremiumContext';
 import { getPricingPlans } from '@/lib/stripe-pricing';
-import { PaymentDialog } from './PaymentDialog';
 import type { PricingPlan } from '@/lib/stripe-pricing';
 import { PremiumBadge } from './PremiumBadge';
+import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 export function PricingScreen() {
-  const { subscribed, openCustomerPortal, checkSubscription } = usePremium();
-  const [paymentDialogOpen, setPaymentDialogOpen] = React.useState(false);
-  const [selectedPlan, setSelectedPlan] = React.useState<PricingPlan | null>(null);
+  const { subscribed, createCheckout, cancelSubscription, getRemainingDays } = usePremium();
+  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
   
   const pricingPlans = getPricingPlans();
   const monthlyPlan = pricingPlans.find(p => p.interval === 'month')!;
-  const yearlyPlan = pricingPlans.find(p => p.interval === 'year')!;
 
-  const handleSubscribe = (plan: PricingPlan) => {
-    setSelectedPlan(plan);
-    setPaymentDialogOpen(true);
+  const handleSubscribe = async (plan: PricingPlan) => {
+    await createCheckout(plan.priceId);
   };
 
-  const handlePaymentSuccess = async () => {
-    await checkSubscription();
-    setPaymentDialogOpen(false);
-    setSelectedPlan(null);
-  };
+  const remainingDays = getRemainingDays();
   const features = {
     free: [{
       name: 'Basic Budgeting',
@@ -143,13 +136,34 @@ export function PricingScreen() {
                 </div>)}
             </div>
 
-            {subscribed ? <Button onClick={() => openCustomerPortal()} className="w-full" variant="outline">
-                <Crown className="h-4 w-4 mr-2" />
-                Manage Subscription
-              </Button> : <Button onClick={() => handleSubscribe(monthlyPlan)} className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
+            {subscribed ? (
+              <div className="space-y-3">
+                {remainingDays !== null && (
+                  <div className="flex items-center justify-center gap-2 p-3 bg-primary/10 rounded-lg">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">
+                      {remainingDays} day{remainingDays !== 1 ? 's' : ''} remaining
+                    </span>
+                  </div>
+                )}
+                <Button
+                  onClick={() => setCancelDialogOpen(true)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Cancel Subscription
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={() => handleSubscribe(monthlyPlan)}
+                className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
+              >
                 <Zap className="h-4 w-4 mr-2" />
                 Subscribe Now
-              </Button>}
+              </Button>
+            )}
           </div>
         </EnhancedCard>
       </div>
@@ -166,13 +180,11 @@ export function PricingScreen() {
         </div>
       </div>
 
-      {selectedPlan && (
-        <PaymentDialog
-          open={paymentDialogOpen}
-          onOpenChange={setPaymentDialogOpen}
-          plan={selectedPlan}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
+      <CancelSubscriptionDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={cancelSubscription}
+        remainingDays={remainingDays}
+      />
     </div>;
 }
