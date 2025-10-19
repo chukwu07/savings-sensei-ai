@@ -67,16 +67,24 @@ export function Transactions() {
       return;
     }
 
-    const success = await addTransaction(result.data);
+    const transactionData = {
+      description: result.data.description,
+      amount: result.data.amount,
+      category: result.data.category,
+      type: result.data.type,
+      date: result.data.date
+    };
+
+    const success = await addTransaction(transactionData);
 
     if (success) {
       // Update budget spent amount if it's an expense
-      if (result.data.type === 'expense') {
+      if (transactionData.type === 'expense') {
         const matchingBudget = budgets.find(budget => 
-          budget.category.toLowerCase() === result.data.category.toLowerCase()
+          budget.category.toLowerCase() === transactionData.category.toLowerCase()
         );
         if (matchingBudget) {
-          await updateBudgetSpent(matchingBudget.id, matchingBudget.spent + result.data.amount);
+          await updateBudgetSpent(matchingBudget.id, matchingBudget.spent + transactionData.amount);
         }
       }
 

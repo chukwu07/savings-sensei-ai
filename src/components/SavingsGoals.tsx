@@ -64,7 +64,12 @@ export function SavingsGoals() {
       return;
     }
 
-    const success = await addGoal(result.data);
+    const success = await addGoal({
+      name: result.data.name,
+      target_amount: result.data.target_amount,
+      current_amount: result.data.current_amount || 0,
+      deadline: result.data.deadline
+    });
     if (success) {
       // Calculate monthly contribution needed
       const target = parseFloat(newGoal.target);
@@ -186,7 +191,12 @@ export function SavingsGoals() {
       ...prev,
       [goalId]: true
     }));
-    const success = await updateGoal(goalId, result.data);
+    const success = await updateGoal(goalId, {
+      name: result.data.name,
+      target_amount: result.data.target_amount,
+      current_amount: result.data.current_amount || 0,
+      deadline: result.data.deadline
+    });
     if (success) {
       setEditingGoal(null);
     }

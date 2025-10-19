@@ -230,7 +230,12 @@ export function BudgetManagement() {
     }
     
     try {
-      await addBudget(result.data);
+      await addBudget({
+        category: result.data.category,
+        allocated: result.data.allocated,
+        spent: result.data.spent || 0,
+        period: result.data.period
+      });
       setFormData({
         category: '',
         allocated: '',
