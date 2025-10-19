@@ -327,18 +327,20 @@ export function SimpleDashboard() {
           await updateBudgetSpent(budget.id, newSpent);
           const percentUsed = (newSpent / budget.allocated) * 100;
           if (percentUsed >= 80) {
-            await fetch('/api/send-budget-alert', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            const { error } = await supabase.functions.invoke('send-budget-alerts', {
+              body: {
                 user_id: user?.id,
                 category: budget.category,
                 budget_allocated: budget.allocated,
                 budget_spent: newSpent,
                 percentage_used: percentUsed,
                 alert_type: percentUsed >= 100 ? 'exceeded_100' : 'warning_90',
-              }),
+              },
             });
+            
+            if (error) {
+              console.error('Failed to send budget alert:', error);
+            }
           }
         }
       

@@ -13,20 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    // Authenticate the request using CRON_SECRET
+    // Authenticate the request using JWT
     const authHeader = req.headers.get('Authorization');
-    const cronSecret = Deno.env.get('CRON_SECRET');
     
-    if (!cronSecret) {
-      console.error('CRON_SECRET not configured');
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    
-    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
-      console.warn('Unauthorized access attempt to send-budget-alerts');
+    if (!authHeader) {
+      console.warn('Missing authorization header');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -34,39 +25,49 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
-    if (!supabaseUrl || !supabaseServiceKey || !resendApiKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error('Missing required environment variables');
     }
 
-    // Use service role key to access all user data
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create authenticated client using user's JWT
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
 
-    // Parse request body to determine alert type
-    let alertType = 'daily_summary'; // default
-    let specificAlert = null;
-
-    if (req.method === 'POST') {
-      try {
-        const body = await req.json();
-        alertType = body.type || 'daily_summary';
-        specificAlert = body;
-      } catch (e) {
-        // Continue with default daily summary if no body
-      }
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.warn('Invalid or expired JWT token');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log(`Processing ${alertType} alerts...`);
+    // Parse request body and verify user_id matches authenticated user
+    const body = await req.json();
+    const { user_id } = body;
 
-    if (alertType === 'real_time_alert' && specificAlert) {
-  // Email alert logic removed
-  return new Response(JSON.stringify({ success: true, message: 'Email alert logic removed.' }), { headers: corsHeaders });
-    } else {
-  // Email alert logic removed
-  return new Response(JSON.stringify({ success: true, message: 'Email alert logic removed.' }), { headers: corsHeaders });
+    if (user_id !== user.id) {
+      console.warn(`User ${user.id} attempted to send alert for user ${user_id}`);
+      return new Response(JSON.stringify({ error: 'Forbidden: Cannot send alerts for other users' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    console.log(`Processing budget alert for user ${user.id}, category: ${body.category}`);
+
+    // Email alert logic removed - edge function now validates authenticated user only
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Budget alert validated successfully (email logic removed)' 
+    }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
     console.error('Error in send-budget-alerts function:', error);
