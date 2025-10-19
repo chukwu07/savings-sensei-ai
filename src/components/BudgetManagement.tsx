@@ -13,6 +13,7 @@ import { CircularProgress } from '@/components/enhanced/CircularProgress';
 import { Plus, Edit2, Trash2, TrendingUp, AlertTriangle, Calculator, DollarSign, Zap, Calendar, Edit, PenTool, Clock, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { budgetSchema, formatZodError } from '@/lib/validation-schemas';
 
 // Add DialogDescription and DialogFooter separately to avoid bundling issues
 const DialogDescription = ({
@@ -211,21 +212,25 @@ export function BudgetManagement() {
     };
   }, []);
   const handleAddBudget = async () => {
-    if (!formData.category || !formData.allocated) {
+    // Validate input with Zod
+    const result = budgetSchema.safeParse({
+      category: formData.category,
+      allocated: parseFloat(formData.allocated),
+      spent: 0,
+      period: formData.period
+    });
+
+    if (!result.success) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Validation Error",
+        description: formatZodError(result.error),
         variant: "destructive"
       });
       return;
     }
+    
     try {
-      await addBudget({
-        category: formData.category,
-        allocated: parseFloat(formData.allocated),
-        spent: 0,
-        period: formData.period
-      });
+      await addBudget(result.data);
       setFormData({
         category: '',
         allocated: '',
@@ -251,19 +256,30 @@ export function BudgetManagement() {
     setIsEditDialogOpen(true);
   };
   const handleUpdateBudget = async () => {
-    if (!selectedBudget || !editFormData.category || !editFormData.allocated) {
+    if (!selectedBudget) return;
+
+    // Validate input with Zod
+    const result = budgetSchema.safeParse({
+      category: editFormData.category,
+      allocated: parseFloat(editFormData.allocated),
+      spent: selectedBudget.spent,
+      period: editFormData.period
+    });
+
+    if (!result.success) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Validation Error",
+        description: formatZodError(result.error),
         variant: "destructive"
       });
       return;
     }
+
     try {
       await updateBudget(selectedBudget.id, {
-        category: editFormData.category,
-        allocated: parseFloat(editFormData.allocated),
-        period: editFormData.period
+        category: result.data.category,
+        allocated: result.data.allocated,
+        period: result.data.period
       });
       setIsEditDialogOpen(false);
       setSelectedBudget(null);

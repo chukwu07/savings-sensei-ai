@@ -7,6 +7,7 @@ import { User, Edit2, Save, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { profileSchema, formatZodError } from "@/lib/validation-schemas";
 
 export function ProfileSettings() {
   const { user } = useAuth();
@@ -53,10 +54,18 @@ export function ProfileSettings() {
   }, [user?.id]);
 
   const handleSave = async () => {
-    if (!user?.id || !editForm.firstName.trim() || !editForm.lastName.trim()) {
+    if (!user?.id) return;
+
+    // Validate input with Zod
+    const result = profileSchema.safeParse({
+      firstName: editForm.firstName,
+      lastName: editForm.lastName
+    });
+
+    if (!result.success) {
       toast({
         title: "Validation Error",
-        description: "Both first and last name are required.",
+        description: formatZodError(result.error),
         variant: "destructive"
       });
       return;
@@ -64,7 +73,7 @@ export function ProfileSettings() {
 
     setIsLoading(true);
     try {
-      const displayName = `${editForm.firstName.trim()} ${editForm.lastName.trim()}`;
+      const displayName = `${result.data.firstName} ${result.data.lastName}`;
       
       const { error } = await supabase
         .from('profiles')

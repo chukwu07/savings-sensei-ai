@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { transactionSchema, formatZodError } from "@/lib/validation-schemas";
 
 const categories = [
   'Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Bills & Utilities',
@@ -48,33 +49,34 @@ export function Transactions() {
   });
 
   const handleAddTransaction = async () => {
-    if (!newTransaction.description || !newTransaction.amount || !newTransaction.category) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all transaction details.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const transactionData = {
+    // Validate input with Zod
+    const result = transactionSchema.safeParse({
       description: newTransaction.description,
       amount: parseFloat(newTransaction.amount),
       category: newTransaction.category,
       type: newTransaction.type,
       date: new Date().toISOString().split('T')[0]
-    };
+    });
 
-    const success = await addTransaction(transactionData);
+    if (!result.success) {
+      toast({
+        title: "Validation Error",
+        description: formatZodError(result.error),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = await addTransaction(result.data);
 
     if (success) {
       // Update budget spent amount if it's an expense
-      if (transactionData.type === 'expense') {
+      if (result.data.type === 'expense') {
         const matchingBudget = budgets.find(budget => 
-          budget.category.toLowerCase() === transactionData.category.toLowerCase()
+          budget.category.toLowerCase() === result.data.category.toLowerCase()
         );
         if (matchingBudget) {
-          await updateBudgetSpent(matchingBudget.id, matchingBudget.spent + transactionData.amount);
+          await updateBudgetSpent(matchingBudget.id, matchingBudget.spent + result.data.amount);
         }
       }
 

@@ -6,6 +6,8 @@ import { Send, Bot, Sparkles, ShoppingCart, DollarSign, Plane, Scissors, Crown, 
 import { Badge } from "@/components/ui/badge";
 import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 import { supabase } from "@/integrations/supabase/client";
+import { chatMessageSchema } from "@/lib/validation-schemas";
+import { useToast } from "@/hooks/use-toast";
 
 
 interface Message {
@@ -40,6 +42,7 @@ export function AIChat() {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const { subscribed } = usePremiumFeatures();
+  const { toast } = useToast();
 
   // Reset messages when component unmounts or user navigates away
   useEffect(() => {
@@ -94,11 +97,21 @@ export function AIChat() {
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    // Validate message with Zod
+    const result = chatMessageSchema.safeParse({ message: inputValue });
+    
+    if (!result.success) {
+      toast({
+        title: "Invalid Message",
+        description: result.error.errors[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
+      content: result.data.message,
       sender: "user",
       timestamp: new Date()
     };
@@ -108,7 +121,7 @@ export function AIChat() {
     setIsTyping(true);
 
     try {
-      const response = await generateAIResponse(inputValue);
+      const response = await generateAIResponse(result.data.message);
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: response,

@@ -15,6 +15,7 @@ import { useSavingsGoals } from "@/hooks/useSavingsGoals";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
+import { savingsGoalSchema, formatZodError } from "@/lib/validation-schemas";
 export function SavingsGoals() {
   console.log('SavingsGoals component loading');
   const [newGoal, setNewGoal] = useState({
@@ -46,20 +47,24 @@ export function SavingsGoals() {
     deleteGoal
   } = useSavingsGoals();
   const handleAddGoal = async () => {
-    if (!newGoal.name || !newGoal.target || !newGoal.deadline) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all goal details.",
-        variant: "destructive"
-      });
-      return;
-    }
-    const success = await addGoal({
+    // Validate input with Zod
+    const result = savingsGoalSchema.safeParse({
       name: newGoal.name,
       target_amount: parseFloat(newGoal.target),
       current_amount: parseFloat(newGoal.current) || 0,
       deadline: newGoal.deadline
     });
+
+    if (!result.success) {
+      toast({
+        title: "Validation Error",
+        description: formatZodError(result.error),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = await addGoal(result.data);
     if (success) {
       // Calculate monthly contribution needed
       const target = parseFloat(newGoal.target);
@@ -160,24 +165,28 @@ export function SavingsGoals() {
     });
   };
   const handleSaveEdit = async (goalId: string) => {
-    if (!editForm.name || !editForm.target_amount || !editForm.deadline) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all goal details.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setLoadingActions(prev => ({
-      ...prev,
-      [goalId]: true
-    }));
-    const success = await updateGoal(goalId, {
+    // Validate input with Zod
+    const result = savingsGoalSchema.safeParse({
       name: editForm.name,
       target_amount: parseFloat(editForm.target_amount),
       current_amount: parseFloat(editForm.current_amount),
       deadline: editForm.deadline
     });
+
+    if (!result.success) {
+      toast({
+        title: "Validation Error",
+        description: formatZodError(result.error),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoadingActions(prev => ({
+      ...prev,
+      [goalId]: true
+    }));
+    const success = await updateGoal(goalId, result.data);
     if (success) {
       setEditingGoal(null);
     }
