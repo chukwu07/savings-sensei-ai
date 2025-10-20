@@ -58,7 +58,7 @@ export function UpgradePrompt({ feature, title, description, className }: Upgrad
       <PaymentDialog
         open={paymentDialogOpen}
         onOpenChange={setPaymentDialogOpen}
-        plan={monthlyPlan}
+        initialPlan={monthlyPlan}
         onSuccess={handlePaymentSuccess}
       />
     </>

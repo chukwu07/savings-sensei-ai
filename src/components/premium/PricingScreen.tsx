@@ -7,15 +7,25 @@ import { getPricingPlans } from '@/lib/stripe-pricing';
 import type { PricingPlan } from '@/lib/stripe-pricing';
 import { PremiumBadge } from './PremiumBadge';
 import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
+import { PaymentDialog } from './PaymentDialog';
+
 export function PricingScreen() {
-  const { subscribed, createCheckout, cancelSubscription, getRemainingDays } = usePremium();
+  const { subscribed, cancelSubscription, getRemainingDays, checkSubscription } = usePremium();
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = React.useState(false);
+  const [selectedPlan, setSelectedPlan] = React.useState<PricingPlan | undefined>();
   
   const pricingPlans = getPricingPlans();
   const monthlyPlan = pricingPlans.find(p => p.interval === 'month')!;
 
-  const handleSubscribe = async (plan: PricingPlan) => {
-    await createCheckout(plan.priceId);
+  const handleSubscribe = () => {
+    setSelectedPlan(monthlyPlan);
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    setPaymentDialogOpen(false);
+    await checkSubscription();
   };
 
   const remainingDays = getRemainingDays();
@@ -157,7 +167,7 @@ export function PricingScreen() {
               </div>
             ) : (
               <Button
-                onClick={() => handleSubscribe(monthlyPlan)}
+                onClick={handleSubscribe}
                 className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
               >
                 <Zap className="h-4 w-4 mr-2" />
@@ -185,6 +195,13 @@ export function PricingScreen() {
         onOpenChange={setCancelDialogOpen}
         onConfirm={cancelSubscription}
         remainingDays={remainingDays}
+      />
+
+      <PaymentDialog
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        initialPlan={selectedPlan}
+        onSuccess={handlePaymentSuccess}
       />
     </div>;
 }
