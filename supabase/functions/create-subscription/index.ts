@@ -7,12 +7,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-SUBSCRIPTION] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    logStep('Function started');
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -23,26 +30,38 @@ serve(async (req) => {
       }
     );
 
+    // Create service role client for database operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const {
       data: { user },
       error: userError,
     } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
+      logStep('ERROR: Authentication failed', { error: userError });
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    logStep('User authenticated', { userId: user.id, email: user.email });
+
     const { priceId, paymentMethodId, customerId } = await req.json();
 
     if (!priceId || !paymentMethodId || !customerId) {
+      logStep('ERROR: Missing required fields');
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    logStep('Request data received', { priceId, customerId });
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
@@ -52,6 +71,7 @@ serve(async (req) => {
     await stripe.paymentMethods.attach(paymentMethodId, {
       customer: customerId,
     });
+    logStep('Payment method attached');
 
     // Set as default payment method
     await stripe.customers.update(customerId, {
@@ -59,6 +79,7 @@ serve(async (req) => {
         default_payment_method: paymentMethodId,
       },
     });
+    logStep('Default payment method set');
 
     // Create subscription
     const subscription = await stripe.subscriptions.create({
@@ -73,6 +94,27 @@ serve(async (req) => {
         user_id: user.id,
       },
     });
+    logStep('Subscription created in Stripe', { subscriptionId: subscription.id, status: subscription.status });
+
+    // Update subscribers table with subscription data
+    const { error: upsertError } = await supabaseAdmin
+      .from('subscribers')
+      .upsert({
+        user_id: user.id,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription.id,
+        subscription_status: subscription.status,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (upsertError) {
+      logStep('ERROR: Failed to update subscribers table', { error: upsertError });
+      // Don't fail the request, webhook will sync it later
+    } else {
+      logStep('Subscribers table updated');
+    }
 
     return new Response(
       JSON.stringify({
@@ -85,7 +127,8 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error('Error creating subscription:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR in create-subscription', { message: errorMessage, stack: error.stack });
     return new Response(
       JSON.stringify({ error: 'Failed to create subscription' }),
       {
