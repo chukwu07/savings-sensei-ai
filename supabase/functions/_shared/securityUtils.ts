@@ -88,14 +88,35 @@ export function createSecureErrorResponse(message: string, status: number = 500)
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   };
 
-  // Avoid exposing sensitive error details in production
-  const sanitizedMessage = message.includes('password') || message.includes('key') || message.includes('secret') 
-    ? 'Internal server error' 
-    : message;
+  // Filter sensitive patterns from error messages
+  let sanitizedMessage = message
+    // Redact secrets and credentials
+    .replace(/\b(password|key|secret|token|api_key|bearer)\b/gi, '[REDACTED]')
+    // Remove file paths and stack traces
+    .replace(/\/[\w\/.\\-]+\.(ts|js|tsx|jsx)/g, '[FILE]')
+    .replace(/at \w+\.[\w.]+/g, 'at [FUNCTION]')
+    .replace(/line \d+/gi, 'line [N]')
+    // Remove database identifiers
+    .replace(/\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|TABLE|COLUMN)\b/gi, '[SQL]')
+    // Remove URLs and endpoints
+    .replace(/https?:\/\/[^\s]+/g, '[URL]')
+    // Remove error codes that might reveal internal structure
+    .replace(/\b[A-Z0-9]{8,}\b/g, '[CODE]');
+
+  // Use generic message for production or if sensitive content detected
+  const isDevelopment = Deno.env.get('ENVIRONMENT') === 'development';
+  const hasSensitiveContent = /\b(database|postgres|supabase|stripe|openai|api)\b/i.test(sanitizedMessage);
+  
+  const clientMessage = (!isDevelopment || hasSensitiveContent)
+    ? 'An error occurred. Please try again later.'
+    : sanitizedMessage;
+
+  // Always log the full error server-side for debugging
+  console.error('[Internal Error]:', message);
 
   return new Response(
     JSON.stringify({ 
-      error: sanitizedMessage,
+      error: clientMessage,
       timestamp: new Date().toISOString()
     }),
     {

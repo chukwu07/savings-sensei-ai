@@ -294,15 +294,15 @@ async function generateAIResponse(message: string, conversationHistory: Message[
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('OpenAI API error:', response.status, errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('[Internal] OpenAI API error:', response.status, errorData);
+      throw new Error('AI service temporarily unavailable');
     }
 
     const data = await response.json();
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Unexpected OpenAI response structure:', data);
-      throw new Error('Invalid response from AI service');
+      console.error('[Internal] Unexpected OpenAI response structure:', JSON.stringify(data));
+      throw new Error('AI service temporarily unavailable');
     }
 
     return data.choices[0].message.content.trim();

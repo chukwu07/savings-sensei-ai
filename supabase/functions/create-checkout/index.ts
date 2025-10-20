@@ -99,7 +99,8 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in create-checkout", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    console.error('[Internal] Checkout error:', errorMessage);
+    return new Response(JSON.stringify({ error: 'Unable to create checkout session. Please try again.' }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

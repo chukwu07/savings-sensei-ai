@@ -60,9 +60,9 @@ Deno.serve(async (req) => {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
       logStep('Webhook signature verified', { eventType: event.type, eventId: event.id });
     } catch (err: any) {
-      logStep('Webhook signature verification failed', { error: err.message });
+      logStep('[Internal] Webhook signature verification failed', { error: err.message });
       return new Response(
-        JSON.stringify({ error: `Webhook signature verification failed: ${err.message}` }),
+        JSON.stringify({ error: 'Webhook verification failed' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -252,7 +252,8 @@ Deno.serve(async (req) => {
       }
     } catch (err: any) {
       errorMessage = err.message;
-      logStep('Error processing webhook', { error: err.message });
+      logStep('[Internal] Error processing webhook', { error: err.message });
+      console.error('[Internal] Webhook processing error:', err);
     }
 
     // Update webhook log with processing status
@@ -275,9 +276,10 @@ Deno.serve(async (req) => {
     );
 
   } catch (error: any) {
-    logStep('Webhook handler error', { error: error.message });
+    logStep('[Internal] Webhook handler error', { error: error.message });
+    console.error('[Internal] Webhook error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Webhook processing failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
