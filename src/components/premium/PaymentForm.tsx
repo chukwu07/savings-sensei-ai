@@ -25,6 +25,18 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
+
+  // Get user email on mount
+  React.useEffect(() => {
+    const getUserEmail = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+      }
+    };
+    getUserEmail();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +64,11 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
         redirect: 'if_required',
         confirmParams: {
           return_url: window.location.origin + '/settings',
+          payment_method_data: {
+            billing_details: {
+              email: userEmail,
+            },
+          },
         },
       });
 
@@ -118,65 +135,69 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="p-4 bg-gradient-to-br from-primary/5 to-primary-glow/5 border border-primary/10 rounded-lg space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-muted-foreground">Plan</span>
-          <span className="text-sm font-semibold">{plan.name}</span>
+    <form onSubmit={handleSubmit} className="flex flex-col h-full">
+      <div className="flex-1 space-y-6">
+        <div className="p-4 bg-gradient-to-br from-primary/5 to-primary-glow/5 border border-primary/10 rounded-lg space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-muted-foreground">Plan</span>
+            <span className="text-sm font-semibold">{plan.name}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-muted-foreground">Amount</span>
+            <span className="text-2xl font-bold">
+              £{plan.price}
+            </span>
+          </div>
+          <div className="pt-2 border-t border-border/50">
+            <p className="text-xs text-muted-foreground">
+              Billed {plan.interval === 'month' ? 'monthly' : 'annually'} • Cancel anytime
+            </p>
+          </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-muted-foreground">Amount</span>
-          <span className="text-2xl font-bold">
-            £{plan.price}
-          </span>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Payment Details</label>
+          <PaymentElement 
+            options={{
+              layout: 'tabs',
+              fields: {
+                billingDetails: {
+                  email: 'never',
+                }
+              },
+            }}
+          />
         </div>
-        <div className="pt-2 border-t border-border/50">
+      </div>
+
+      <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t space-y-4">
+        <Button 
+          type="submit" 
+          className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
+          size="lg"
+          disabled={!stripe || isProcessing}
+        >
+          {isProcessing ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Processing...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Subscribe for £{plan.price}/{plan.interval === 'month' ? 'mo' : 'yr'}
+            </>
+          )}
+        </Button>
+
+        <div className="text-center space-y-2">
           <p className="text-xs text-muted-foreground">
-            Billed {plan.interval === 'month' ? 'monthly' : 'annually'} • Cancel anytime
+            🔒 Secure payment powered by Stripe
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Your subscription starts immediately • Cancel anytime
           </p>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Payment Details</label>
-        <PaymentElement 
-          options={{
-            layout: 'tabs',
-            fields: {
-              billingDetails: {
-                email: 'never',
-              }
-            },
-          }}
-        />
-      </div>
-
-      <Button 
-        type="submit" 
-        className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"
-        size="lg"
-        disabled={!stripe || isProcessing}
-      >
-        {isProcessing ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Processing...
-          </>
-        ) : (
-          <>
-            <Sparkles className="h-4 w-4 mr-2" />
-            Subscribe for £{plan.price}/{plan.interval === 'month' ? 'mo' : 'yr'}
-          </>
-        )}
-      </Button>
-
-      <div className="text-center space-y-2">
-        <p className="text-xs text-muted-foreground">
-          🔒 Secure payment powered by Stripe
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Your subscription starts immediately • Cancel anytime
-        </p>
       </div>
     </form>
   );
