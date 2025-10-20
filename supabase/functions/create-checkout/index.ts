@@ -54,7 +54,7 @@ serve(async (req) => {
       logStep("No existing customer found");
     }
 
-    // Create checkout session
+    // Create checkout session with user_id in metadata
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -80,6 +80,14 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/?premium=success`,
       cancel_url: `${req.headers.get("origin")}/?premium=cancelled`,
+      metadata: {
+        supabase_user_id: user.id,
+      },
+      subscription_data: {
+        metadata: {
+          supabase_user_id: user.id,
+        },
+      },
     });
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });

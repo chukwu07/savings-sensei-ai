@@ -129,29 +129,31 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
 
   const cancelSubscription = async () => {
     try {
-      // Get the user's subscription from database
+      // Get the user's subscription data from database
       const { data: subscriptionData, error: fetchError } = await supabase
         .from('subscribers')
-        .select('*')
+        .select('stripe_subscription_id')
         .eq('user_id', user?.id)
         .single();
 
-      if (fetchError || !subscriptionData) {
-        throw new Error('No subscription found');
+      if (fetchError || !subscriptionData?.stripe_subscription_id) {
+        throw new Error('No active subscription found');
       }
 
-      // Update subscription status to cancelled
-      const { error: updateError } = await supabase
-        .from('subscribers')
-        .update({ 
-          subscribed: false,
-          subscription_end: new Date().toISOString()
-        })
-        .eq('user_id', user?.id);
+      // Call edge function to cancel in Stripe
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: {
+          subscriptionId: subscriptionData.stripe_subscription_id
+        }
+      });
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
-      // Refresh subscription status
+      // Refresh subscription status (webhook will update database)
       await checkSubscription();
     } catch (error) {
       console.error('Error canceling subscription:', error);
