@@ -32,7 +32,9 @@ function LoadingFallback() {
 }
 
 function AppContent() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    return !sessionStorage.getItem('splash-shown');
+  });
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [showAuth, setShowAuth] = useState(false);
   const { user, loading } = useAuth();
