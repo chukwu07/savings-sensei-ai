@@ -24,8 +24,10 @@ class SecurityLogger {
       timestamp: new Date().toISOString(),
     };
 
-    // Log to console with structured format
-    console.log('🔒 SECURITY EVENT:', JSON.stringify(securityEvent, null, 2));
+    // Only log to console in development mode
+    if (import.meta.env.DEV) {
+      console.log('🔒 SECURITY EVENT:', JSON.stringify(securityEvent, null, 2));
+    }
 
     // Store in localStorage for client-side events (with rotation)
     if (typeof window !== 'undefined') {

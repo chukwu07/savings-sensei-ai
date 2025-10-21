@@ -79,20 +79,28 @@ export function AIChat() {
       });
 
       if (error) {
-        console.error("AI chat error:", error);
+        // Only log in development mode
+        if (import.meta.env.DEV) {
+          console.error("AI chat error:", error);
+        }
+        
         if (error.message?.includes('429')) {
           return "⚠️ Too many requests. Please wait a moment and try again.";
         }
-        if (error.message?.includes('402')) {
-          return "⚠️ AI service requires payment. Please contact support.";
+        if (error.message?.includes('401') || error.message?.includes('402')) {
+          return "❌ Please sign in to use AI chat.";
         }
-        return `❌ Error: ${error.message}`;
+        // Generic error message - don't expose error details
+        return "❌ Unable to process request. Please try again.";
       }
       
       return data?.content || "❌ No response from AI.";
     } catch (err: any) {
-      console.error("AI chat error:", err);
-      return `❌ Error: ${err.message || "Failed to connect to AI service."}`;
+      // Only log in development mode
+      if (import.meta.env.DEV) {
+        console.error("AI chat error:", err);
+      }
+      return "❌ Unable to connect to AI service. Please try again.";
     }
   };
 

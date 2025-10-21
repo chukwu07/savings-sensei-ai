@@ -2,10 +2,11 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
 import { rateLimiter, createRateLimitResponse } from '../_shared/rateLimiter.ts';
 import { EdgeSecurityLogger, validateInput, createSecureErrorResponse } from '../_shared/securityUtils.ts';
+import { validateCronRequest } from '../_shared/cronAuth.ts';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': 'null',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
 };
 
 interface PushNotificationRequest {
@@ -33,18 +34,16 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Authenticate the request using CRON_SECRET
-  const authHeader = req.headers.get('Authorization');
+  // Authenticate the request with enhanced CRON validation
   const cronSecret = Deno.env.get('CRON_SECRET');
+  const authResult = await validateCronRequest(req, cronSecret);
   
-  if (!cronSecret) {
-    EdgeSecurityLogger.logSuspiciousActivity(req, 'send-push-notification', 'CRON_SECRET not configured');
-    return createSecureErrorResponse('Server configuration error', 500);
-  }
-  
-  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
-    EdgeSecurityLogger.logAuthAttempt(req, 'send-push-notification', false, undefined, { reason: 'Invalid or missing CRON_SECRET' });
-    return createSecureErrorResponse('Unauthorized', 401);
+  if (!authResult.valid) {
+    EdgeSecurityLogger.logAuthAttempt(req, 'send-push-notification', false, undefined, { reason: authResult.error });
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...authResult.headers, 'Content-Type': 'application/json' },
+    });
   }
 
   EdgeSecurityLogger.logAuthAttempt(req, 'send-push-notification', true);

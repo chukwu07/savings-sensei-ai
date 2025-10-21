@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { validateCronRequest } from '../_shared/cronAuth.ts';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': 'null',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
 };
 
 const calculateNextDueDate = (frequency: string, currentDate: Date): Date => {
@@ -38,23 +39,15 @@ serve(async (req) => {
   }
 
   try {
-    // Authenticate the request using CRON_SECRET
-    const authHeader = req.headers.get('Authorization');
+    // Authenticate the request with enhanced CRON validation
     const cronSecret = Deno.env.get('CRON_SECRET');
+    const authResult = await validateCronRequest(req, cronSecret);
     
-    if (!cronSecret) {
-      console.error('CRON_SECRET not configured');
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    
-    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
-      console.warn('Unauthorized access attempt to process-recurring-transactions');
+    if (!authResult.valid) {
+      console.warn('Unauthorized access attempt:', authResult.error);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...authResult.headers, 'Content-Type': 'application/json' },
       });
     }
 
