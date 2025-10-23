@@ -32,16 +32,10 @@ function LoadingFallback() {
 }
 
 function AppContent() {
-  const [showSplash, setShowSplash] = useState(() => {
-    return !sessionStorage.getItem('splash-shown');
-  });
+  const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [showAuth, setShowAuth] = useState(false);
   const { user, loading } = useAuth();
-
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
-  }
 
   if (loading) {
     return (
@@ -52,6 +46,10 @@ function AppContent() {
   }
 
   if (!user) {
+    if (showSplash) {
+      return <SplashScreen onComplete={() => setShowSplash(false)} />;
+    }
+    
     if (showAuth) {
       return <Auth />;
     }
