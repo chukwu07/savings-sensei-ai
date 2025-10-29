@@ -4,74 +4,74 @@ export interface PricingPlan {
   priceId: string;
   price: number;
   currency: string;
-  interval: 'month' | 'year';
+  interval: "month" | "year";
   features: string[];
 }
 
 export const testPricingPlans: PricingPlan[] = [
   {
-    id: 'premium-monthly-test',
-    name: 'Premium Monthly',
-    priceId: 'price_1SJoVnPTZemMTRjBFFFIE0UV',
+    id: "premium-monthly-test",
+    name: "Premium Monthly",
+    priceId: "price_1SJoVnPTZemMTRjBFFFIE0UV",
     price: 6.99,
-    currency: 'gbp',
-    interval: 'month',
+    currency: "gbp",
+    interval: "month",
     features: [
-      'Unlimited AI chat messages',
-      'Unlimited savings goals',
-      'Advanced analytics',
-      'Priority support',
-      'Export data',
+      "Unlimited AI chat messages",
+      "Unlimited savings goals",
+      "Advanced analytics",
+      "Priority support",
+      "Export data",
     ],
   },
   {
-    id: 'premium-yearly-test',
-    name: 'Premium Yearly',
-    priceId: 'price_1SJoWVPTZemMTRjB32qzRpKx',
+    id: "premium-yearly-test",
+    name: "Premium Yearly",
+    priceId: "price_1SJoWVPTZemMTRjB32qzRpKx",
     price: 69.99,
-    currency: 'gbp',
-    interval: 'year',
+    currency: "gbp",
+    interval: "year",
     features: [
-      'Unlimited AI chat messages',
-      'Unlimited savings goals',
-      'Advanced analytics',
-      'Priority support',
-      'Export data',
-      'Save 16% vs monthly',
+      "Unlimited AI chat messages",
+      "Unlimited savings goals",
+      "Advanced analytics",
+      "Priority support",
+      "Export data",
+      "Save 16% vs monthly",
     ],
   },
 ];
 
 export const livePricingPlans: PricingPlan[] = [
   {
-    id: 'premium-monthly-live',
-    name: 'Premium Monthly',
-    priceId: 'price_live_monthly_placeholder', // TODO: Replace with actual live price ID
+    id: "premium-monthly-live",
+    name: "Premium Monthly",
+    priceId: "price_1SNOWLAfvZX5mj9iNRtILP0h",
     price: 6.99,
-    currency: 'gbp',
-    interval: 'month',
+    currency: "gbp",
+    interval: "month",
     features: [
-      'Unlimited AI chat messages',
-      'Unlimited savings goals',
-      'Advanced analytics',
-      'Priority support',
-      'Export data',
+      "Unlimited AI chat messages",
+      "Unlimited savings goals",
+      "Advanced analytics",
+      "Priority support",
+      "Export data",
     ],
   },
   {
-    id: 'premium-yearly-live',
-    name: 'Premium Yearly',
-    priceId: 'price_live_yearly_placeholder', // TODO: Replace with actual live price ID
+    id: "premium-yearly-live",
+    name: "Premium Yearly",
+    priceId: "price_1SNOWpAfvZX5mj9ie0D0S4OY",
     price: 69.99,
-    currency: 'gbp',
-    interval: 'year',
+    currency: "gbp",
+    interval: "year",
     features: [
-      'Unlimited AI chat messages',
-      'Unlimited savings goals',
-      'Advanced analytics',
-      'Priority support',
-      'Export data',
-      'Save 16% vs monthly',
+      "Unlimited AI chat messages",
+      "Unlimited savings goals",
+      "Advanced analytics",
+      "Priority support",
+      "Export data",
+      "Save 16% vs monthly",
     ],
   },
 ];
@@ -79,7 +79,7 @@ export const livePricingPlans: PricingPlan[] = [
 // Determine if we're in test mode based on the Stripe key
 export const isStripeTestMode = (): boolean => {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  return stripeKey?.startsWith('pk_test_') ?? true;
+  return stripeKey?.startsWith("pk_test_") ?? true;
 };
 
 // Get the appropriate pricing plans based on the environment
@@ -91,7 +91,7 @@ export const getPricingPlans = (): PricingPlan[] => {
 export const getStripePublishableKey = (): string => {
   const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
   if (!key) {
-    throw new Error('Stripe publishable key is not configured');
+    throw new Error("Stripe publishable key is not configured");
   }
   return key;
 };
