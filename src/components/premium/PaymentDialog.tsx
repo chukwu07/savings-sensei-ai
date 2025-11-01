@@ -43,6 +43,9 @@ export function PaymentDialog({ open, onOpenChange, initialPlan, onSuccess }: Pa
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
         },
+        body: {
+          priceId: selectedPlan.priceId,
+        },
       });
 
       if (error) throw error;
@@ -69,7 +72,7 @@ export function PaymentDialog({ open, onOpenChange, initialPlan, onSuccess }: Pa
     if (open) {
       createSetupIntent();
     }
-  }, [open]);
+  }, [open, isYearly]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

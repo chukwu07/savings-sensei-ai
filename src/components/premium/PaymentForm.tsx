@@ -58,8 +58,8 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
         return;
       }
 
-      // Confirm the setup intent
-      const { error: setupError, setupIntent } = await stripe.confirmSetup({
+      // Confirm the payment intent
+      const { error: paymentError, paymentIntent } = await stripe.confirmPayment({
         elements,
         redirect: 'if_required',
         confirmParams: {
@@ -72,13 +72,13 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
         },
       });
 
-      if (setupError) {
-        onError(setupError.message || 'Payment method validation failed');
+      if (paymentError) {
+        onError(paymentError.message || 'Payment failed');
         setIsProcessing(false);
         return;
       }
 
-      if (setupIntent?.payment_method) {
+      if (paymentIntent?.status === 'succeeded' && paymentIntent?.payment_method) {
         // Create subscription via edge function
         const { data: { session } } = await supabase.auth.getSession();
         const { data, error: subscriptionError } = await supabase.functions.invoke('create-subscription', {
@@ -87,7 +87,7 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
           },
           body: {
             priceId: plan.priceId,
-            paymentMethodId: setupIntent.payment_method,
+            paymentMethodId: paymentIntent.payment_method,
             customerId: customerId,
           }
         });

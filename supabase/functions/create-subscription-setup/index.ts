@@ -35,9 +35,28 @@ serve(async (req) => {
       );
     }
 
+    const { priceId } = await req.json();
+
+    if (!priceId) {
+      return new Response(
+        JSON.stringify({ error: 'Price ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     });
+
+    // Fetch price details to get the amount
+    const price = await stripe.prices.retrieve(priceId);
+    
+    if (!price.unit_amount) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid price' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Check if customer exists
     let customer;
@@ -58,18 +77,22 @@ serve(async (req) => {
       });
     }
 
-    // Create SetupIntent for collecting payment method
-    const setupIntent = await stripe.setupIntents.create({
+    // Create PaymentIntent for the initial subscription payment
+    const paymentIntent = await stripe.paymentIntents.create({
       customer: customer.id,
+      amount: price.unit_amount,
+      currency: price.currency || 'gbp',
       payment_method_types: ['card'],
+      setup_future_usage: 'off_session',
       metadata: {
         user_id: user.id,
+        price_id: priceId,
       },
     });
 
     return new Response(
       JSON.stringify({
-        clientSecret: setupIntent.client_secret,
+        clientSecret: paymentIntent.client_secret,
         customerId: customer.id,
       }),
       {
