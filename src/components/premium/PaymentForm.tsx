@@ -130,6 +130,7 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
                 Authorization: `Bearer ${session?.access_token}`,
               },
               body: {
+                subscriptionId: existingSubscription.stripe_subscription_id,
                 immediately: true,
               }
             });
