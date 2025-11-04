@@ -10,11 +10,10 @@ import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 import { PaymentDialog } from './PaymentDialog';
 
 export function PricingScreen() {
-  const { subscribed, cancelAtPeriodEnd, subscriptionEnd, cancelSubscription, reactivateSubscription, getRemainingDays, checkSubscription } = usePremium();
+  const { subscribed, cancelAtPeriodEnd, subscriptionEnd, cancelSubscription, getRemainingDays, checkSubscription } = usePremium();
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = React.useState(false);
   const [selectedPlan, setSelectedPlan] = React.useState<PricingPlan | undefined>();
-  const [isReactivating, setIsReactivating] = React.useState(false);
   
   const pricingPlans = getPricingPlans();
   const monthlyPlan = pricingPlans.find(p => p.interval === 'month')!;
@@ -29,15 +28,10 @@ export function PricingScreen() {
     await checkSubscription();
   };
 
-  const handleReactivate = async () => {
-    try {
-      setIsReactivating(true);
-      await reactivateSubscription();
-    } catch (error) {
-      console.error('Failed to reactivate:', error);
-    } finally {
-      setIsReactivating(false);
-    }
+  const handleReactivate = () => {
+    // Open payment dialog to allow plan selection during reactivation
+    setSelectedPlan(monthlyPlan);
+    setPaymentDialogOpen(true);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -187,11 +181,10 @@ export function PricingScreen() {
                     </div>
                     <Button
                       onClick={handleReactivate}
-                      disabled={isReactivating}
                       className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
                     >
                       <Zap className="h-4 w-4 mr-2" />
-                      {isReactivating ? 'Reactivating...' : 'Reactivate Subscription'}
+                      Reactivate or Change Plan
                     </Button>
                   </>
                 ) : (

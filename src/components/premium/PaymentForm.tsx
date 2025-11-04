@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Sparkles } from 'lucide-react';
 import type { PricingPlan } from '@/lib/stripe-pricing';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { getPricingPlans } from '@/lib/stripe-pricing';
 
 const paymentSchema = z.object({
   complete: z.boolean().refine(val => val === true, {
@@ -26,16 +27,28 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [existingSubscription, setExistingSubscription] = useState<any>(null);
 
-  // Get user email on mount
-  React.useEffect(() => {
-    const getUserEmail = async () => {
+  // Get user email and check for existing subscription on mount
+  useEffect(() => {
+    const initializeData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.email) {
         setUserEmail(session.user.email);
       }
+
+      // Check for existing subscription
+      const { data: subData } = await supabase
+        .from('subscribers')
+        .select('*')
+        .eq('user_id', session?.user?.id)
+        .single();
+      
+      if (subData) {
+        setExistingSubscription(subData);
+      }
     };
-    getUserEmail();
+    initializeData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,8 +92,57 @@ export function PaymentForm({ clientSecret, customerId, plan, onSuccess, onError
       }
 
       if (paymentIntent?.status === 'succeeded' && paymentIntent?.payment_method) {
-        // Create subscription via edge function
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // Check if user has a cancelled subscription
+        if (existingSubscription?.cancel_at_period_end && existingSubscription?.stripe_subscription_id) {
+          const pricingPlans = getPricingPlans();
+          const existingPlan = pricingPlans.find(p => p.priceId === existingSubscription.subscription_tier);
+          const newPlanInterval = plan.interval;
+          const existingPlanInterval = existingPlan?.interval;
+
+          // If the plan interval is the same, just reactivate
+          if (newPlanInterval === existingPlanInterval) {
+            const { error: reactivateError } = await supabase.functions.invoke('reactivate-subscription', {
+              headers: {
+                Authorization: `Bearer ${session?.access_token}`,
+              },
+              body: {
+                subscriptionId: existingSubscription.stripe_subscription_id,
+              }
+            });
+
+            if (reactivateError) {
+              onError('Failed to reactivate subscription. Please try again.');
+              setIsProcessing(false);
+              return;
+            }
+
+            setIsSuccess(true);
+            setTimeout(() => {
+              onSuccess();
+            }, 2000);
+            return;
+          } else {
+            // If plan is different, cancel old subscription immediately
+            const { error: cancelError } = await supabase.functions.invoke('cancel-subscription', {
+              headers: {
+                Authorization: `Bearer ${session?.access_token}`,
+              },
+              body: {
+                immediately: true,
+              }
+            });
+
+            if (cancelError) {
+              onError('Failed to update subscription. Please try again.');
+              setIsProcessing(false);
+              return;
+            }
+          }
+        }
+
+        // Create new subscription (or first-time subscription)
         const { data, error: subscriptionError } = await supabase.functions.invoke('create-subscription', {
           headers: {
             Authorization: `Bearer ${session?.access_token}`,

@@ -44,13 +44,13 @@ serve(async (req) => {
     }
     logStep("User authenticated", { userId: user.id });
 
-    // Get subscription ID from request
-    const { subscriptionId } = await req.json();
+    // Get subscription ID and cancellation mode from request
+    const { subscriptionId, immediately = false } = await req.json();
     if (!subscriptionId) {
       logStep("ERROR: No subscription ID provided");
       throw new Error("Subscription ID required");
     }
-    logStep("Cancellation requested", { subscriptionId });
+    logStep("Cancellation requested", { subscriptionId, immediately });
 
     // Verify user owns this subscription
     const { data: subData, error: fetchError } = await supabaseClient
@@ -66,7 +66,7 @@ serve(async (req) => {
     }
     logStep("Subscription ownership verified");
 
-    // Cancel in Stripe (at end of period to be fair to user)
+    // Cancel in Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       logStep("ERROR: STRIPE_SECRET_KEY not set");
@@ -77,15 +77,25 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const canceledSubscription = await stripe.subscriptions.update(subscriptionId, {
-      cancel_at_period_end: true,
-    });
-
-    logStep("Subscription cancelled in Stripe", { 
-      subscriptionId: canceledSubscription.id,
-      cancelAtPeriodEnd: canceledSubscription.cancel_at_period_end,
-      currentPeriodEnd: canceledSubscription.current_period_end
-    });
+    let canceledSubscription;
+    if (immediately) {
+      // Cancel immediately (for plan switches)
+      canceledSubscription = await stripe.subscriptions.cancel(subscriptionId);
+      logStep("Subscription cancelled immediately in Stripe", { 
+        subscriptionId: canceledSubscription.id,
+        status: canceledSubscription.status
+      });
+    } else {
+      // Cancel at end of period (default, fair to user)
+      canceledSubscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true,
+      });
+      logStep("Subscription set to cancel at period end in Stripe", { 
+        subscriptionId: canceledSubscription.id,
+        cancelAtPeriodEnd: canceledSubscription.cancel_at_period_end,
+        currentPeriodEnd: canceledSubscription.current_period_end
+      });
+    }
 
     return new Response(
       JSON.stringify({ 
