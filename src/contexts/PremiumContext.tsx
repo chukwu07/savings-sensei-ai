@@ -6,11 +6,13 @@ interface PremiumContextType {
   subscribed: boolean;
   subscriptionTier: string | null;
   subscriptionEnd: string | null;
+  cancelAtPeriodEnd: boolean;
   isLoading: boolean;
   checkSubscription: () => Promise<void>;
   createCheckout: (priceId?: string) => Promise<void>;
   openCustomerPortal: () => Promise<void>;
   cancelSubscription: () => Promise<void>;
+  reactivateSubscription: () => Promise<void>;
   getRemainingDays: () => number | null;
 }
 
@@ -32,6 +34,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   const [subscribed, setSubscribed] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
@@ -40,6 +43,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       setSubscribed(false);
       setSubscriptionTier(null);
       setSubscriptionEnd(null);
+      setCancelAtPeriodEnd(false);
       setIsLoading(false);
       return;
     }
@@ -59,17 +63,20 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         setSubscribed(false);
         setSubscriptionTier(null);
         setSubscriptionEnd(null);
+        setCancelAtPeriodEnd(false);
         return;
       }
 
       setSubscribed(data.subscribed || false);
       setSubscriptionTier(data.subscription_tier || null);
       setSubscriptionEnd(data.subscription_end || null);
+      setCancelAtPeriodEnd(data.cancel_at_period_end || false);
     } catch (error) {
       console.error('Subscription check error:', error);
       setSubscribed(false);
       setSubscriptionTier(null);
       setSubscriptionEnd(null);
+      setCancelAtPeriodEnd(false);
     } finally {
       setIsLoading(false);
     }
@@ -161,6 +168,37 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     }
   };
 
+  const reactivateSubscription = async () => {
+    try {
+      const { data: subscriptionData, error: fetchError } = await supabase
+        .from('subscribers')
+        .select('stripe_subscription_id')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (fetchError || !subscriptionData?.stripe_subscription_id) {
+        throw new Error('No subscription found');
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('reactivate-subscription', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: {
+          subscriptionId: subscriptionData.stripe_subscription_id
+        }
+      });
+
+      if (error) throw error;
+
+      await checkSubscription();
+    } catch (error) {
+      console.error('Error reactivating subscription:', error);
+      throw error;
+    }
+  };
+
   const getRemainingDays = (): number | null => {
     if (!subscriptionEnd) return null;
     
@@ -190,11 +228,13 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     subscribed,
     subscriptionTier,
     subscriptionEnd,
+    cancelAtPeriodEnd,
     isLoading,
     checkSubscription,
     createCheckout,
     openCustomerPortal,
     cancelSubscription,
+    reactivateSubscription,
     getRemainingDays,
   };
 

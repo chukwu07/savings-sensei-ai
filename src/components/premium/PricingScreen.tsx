@@ -10,10 +10,11 @@ import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 import { PaymentDialog } from './PaymentDialog';
 
 export function PricingScreen() {
-  const { subscribed, cancelSubscription, getRemainingDays, checkSubscription } = usePremium();
+  const { subscribed, cancelAtPeriodEnd, subscriptionEnd, cancelSubscription, reactivateSubscription, getRemainingDays, checkSubscription } = usePremium();
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = React.useState(false);
   const [selectedPlan, setSelectedPlan] = React.useState<PricingPlan | undefined>();
+  const [isReactivating, setIsReactivating] = React.useState(false);
   
   const pricingPlans = getPricingPlans();
   const monthlyPlan = pricingPlans.find(p => p.interval === 'month')!;
@@ -26,6 +27,26 @@ export function PricingScreen() {
   const handlePaymentSuccess = async () => {
     setPaymentDialogOpen(false);
     await checkSubscription();
+  };
+
+  const handleReactivate = async () => {
+    try {
+      setIsReactivating(true);
+      await reactivateSubscription();
+    } catch (error) {
+      console.error('Failed to reactivate:', error);
+    } finally {
+      setIsReactivating(false);
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
   };
 
   const remainingDays = getRemainingDays();
@@ -148,22 +169,51 @@ export function PricingScreen() {
 
             {subscribed ? (
               <div className="space-y-3">
-                {remainingDays !== null && (
-                  <div className="flex items-center justify-center gap-2 p-3 bg-primary/10 rounded-lg">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">
-                      {remainingDays} day{remainingDays !== 1 ? 's' : ''} remaining
-                    </span>
-                  </div>
+                {cancelAtPeriodEnd ? (
+                  <>
+                    <div className="space-y-2 p-4 bg-warning/10 border border-warning/20 rounded-lg">
+                      <div className="flex items-center gap-2 text-warning">
+                        <XCircle className="h-5 w-5" />
+                        <span className="font-semibold">Subscription Cancelled</span>
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <p className="text-foreground">
+                          Access until <strong>{formatDate(subscriptionEnd)}</strong> ({remainingDays} days)
+                        </p>
+                        <p className="text-muted-foreground">
+                          You will not be charged again
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleReactivate}
+                      disabled={isReactivating}
+                      className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
+                    >
+                      <Zap className="h-4 w-4 mr-2" />
+                      {isReactivating ? 'Reactivating...' : 'Reactivate Subscription'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {remainingDays !== null && (
+                      <div className="flex items-center justify-center gap-2 p-3 bg-primary/10 rounded-lg">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">
+                          Renews on {formatDate(subscriptionEnd)}
+                        </span>
+                      </div>
+                    )}
+                    <Button
+                      onClick={() => setCancelDialogOpen(true)}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Cancel Subscription
+                    </Button>
+                  </>
                 )}
-                <Button
-                  onClick={() => setCancelDialogOpen(true)}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Cancel Subscription
-                </Button>
               </div>
             ) : (
               <Button
