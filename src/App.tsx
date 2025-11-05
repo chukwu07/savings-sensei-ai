@@ -1,5 +1,4 @@
 import { Suspense, useState, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +13,6 @@ import { BottomNav, TabType } from "@/components/BottomNav";
 import { SecurityMonitor } from "@/components/SecurityMonitor";
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
 
 // Lazy load page components
 const Home = lazy(() => import("./pages/Home"));
@@ -96,14 +94,9 @@ const App = () => (
           <PushNotificationProvider>
             <NetworkProvider>
               <TooltipProvider>
-                <BrowserRouter>
-                  <Toaster />
-                  <Sonner />
-                  <Routes>
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/*" element={<AppContent />} />
-                  </Routes>
-                </BrowserRouter>
+                <Toaster />
+                <Sonner />
+                <AppContent />
               </TooltipProvider>
             </NetworkProvider>
           </PushNotificationProvider>

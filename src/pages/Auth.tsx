@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-type AuthScreen = 'sign-in' | 'create-account' | 'log-in' | 'loading' | 'forgot-password';
+type AuthScreen = 'sign-in' | 'create-account' | 'log-in' | 'loading' | 'forgot-password' | 'reset-password';
 
 export default function Auth() {
   const [currentScreen, setCurrentScreen] = useState<AuthScreen>('sign-in');
@@ -21,8 +21,21 @@ export default function Auth() {
   const [preFilledEmail, setPreFilledEmail] = useState("");
   const [preFilledPassword, setPreFilledPassword] = useState("");
   const [resetEmail, setResetEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const { toast } = useToast();
+
+  // Check for password recovery session
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setCurrentScreen('reset-password');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Load last used email on component mount
   useEffect(() => {
@@ -154,7 +167,7 @@ export default function Auth() {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/`,
       });
       
       if (error) throw error;
@@ -171,6 +184,56 @@ export default function Auth() {
         description: error.message || "Failed to send reset link.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword !== newPasswordConfirm) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure both passwords are the same.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCurrentScreen('loading');
+    setLoadingMessage("Updating your password...");
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password updated!",
+        description: "You can now log in with your new password.",
+      });
+
+      // Clear fields and redirect to login
+      setNewPassword("");
+      setNewPasswordConfirm("");
+      setCurrentScreen('log-in');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password.",
+        variant: "destructive"
+      });
+      setCurrentScreen('reset-password');
     }
   };
 
@@ -544,12 +607,93 @@ export default function Auth() {
     </div>
   );
 
+  // Screen 6: Reset Password Screen
+  const renderResetPasswordScreen = () => (
+    <div className="w-full max-w-md bg-card rounded-2xl shadow-elegant p-8">
+      <div className="text-center mb-6">
+        <img 
+          src="/icon-1024.png" 
+          alt="BudgetBuddy AI" 
+          className="w-16 h-16 mx-auto mb-4"
+        />
+        <h1 className="text-2xl font-bold text-foreground">
+          Reset Your Password
+        </h1>
+        <p className="text-muted-foreground text-sm mt-2">
+          Enter your new password below
+        </p>
+      </div>
+
+      <form onSubmit={handleResetPassword} className="space-y-4">
+        <div>
+          <Label htmlFor="newPassword" className="text-sm font-medium text-foreground">
+            New Password
+          </Label>
+          <div className="relative mt-1">
+            <Input
+              id="newPassword"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter new password (min. 6 characters)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={6}
+              className="h-12 pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="newPasswordConfirm" className="text-sm font-medium text-foreground">
+            Confirm New Password
+          </Label>
+          <Input
+            id="newPasswordConfirm"
+            type="password"
+            placeholder="Confirm your new password"
+            value={newPasswordConfirm}
+            onChange={(e) => setNewPasswordConfirm(e.target.value)}
+            required
+            minLength={6}
+            className="mt-1 h-12"
+          />
+        </div>
+
+        <Button 
+          type="submit" 
+          className="w-full h-12 text-base font-semibold bg-gradient-primary hover:opacity-90 transition-all duration-300"
+        >
+          Reset Password
+        </Button>
+      </form>
+
+      <div className="text-center mt-6">
+        <button
+          onClick={() => setCurrentScreen('log-in')}
+          className="text-sm text-muted-foreground hover:text-foreground underline"
+        >
+          ← Back to Login
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
       {currentScreen === 'sign-in' && renderSignInScreen()}
       {currentScreen === 'create-account' && renderCreateAccountScreen()}
       {currentScreen === 'log-in' && renderLogInScreen()}
       {currentScreen === 'forgot-password' && renderForgotPasswordScreen()}
+      {currentScreen === 'reset-password' && renderResetPasswordScreen()}
       {currentScreen === 'loading' && renderLoadingScreen()}
     </div>
   );
