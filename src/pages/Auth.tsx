@@ -28,6 +28,13 @@ export default function Auth() {
 
   // Check for password recovery session
   useEffect(() => {
+    // Check if we're already in a recovery session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.recovery_sent_at) {
+        setCurrentScreen('reset-password');
+      }
+    });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setCurrentScreen('reset-password');

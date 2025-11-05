@@ -1,4 +1,4 @@
-import { Suspense, useState, lazy } from "react";
+import { Suspense, useState, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +11,7 @@ import { NetworkProvider } from "@/contexts/NetworkContext";
 import { SplashScreen } from "@/components/SplashScreen";
 import { BottomNav, TabType } from "@/components/BottomNav";
 import { SecurityMonitor } from "@/components/SecurityMonitor";
+import { supabase } from "@/integrations/supabase/client";
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 
@@ -35,7 +36,22 @@ function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [showAuth, setShowAuth] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const { user, loading } = useAuth();
+
+  // Detect password recovery session
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+        setShowAuth(true);
+      } else if (event === 'SIGNED_IN' && !session?.user?.recovery_sent_at) {
+        setIsPasswordRecovery(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   if (loading) {
     return (
@@ -43,6 +59,11 @@ function AppContent() {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // Show auth page for password recovery even if user exists
+  if (isPasswordRecovery) {
+    return <Auth />;
   }
 
   if (!user) {
