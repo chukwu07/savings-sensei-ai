@@ -86,10 +86,10 @@ export function More() {
       <div className="flex-1 overflow-hidden px-4">
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="h-full flex flex-col overflow-hidden space-y-6">
           <div className="px-4">
-            <div className="flex overflow-x-auto gap-2 pb-2">
+            <div className="flex overflow-x-auto md:overflow-x-visible gap-2 pb-2">
               <Button
                 variant={currentTab === "notifications" ? "default" : "ghost"}
-                className="flex-shrink-0 h-auto p-2"
+                className="flex-shrink-0 md:flex-shrink md:flex-1 h-auto p-2"
                 onClick={() => setCurrentTab("notifications")}
               >
                 <EnhancedCard className="p-3 min-w-[120px]">
@@ -102,7 +102,7 @@ export function More() {
 
               <Button
                 variant={currentTab === "ai" ? "default" : "ghost"}
-                className="flex-shrink-0 h-auto p-2"
+                className="flex-shrink-0 md:flex-shrink md:flex-1 h-auto p-2"
                 onClick={() => setCurrentTab("ai")}
               >
                 <EnhancedCard className="p-3 min-w-[120px]">
@@ -115,7 +115,7 @@ export function More() {
 
               <Button
                 variant={currentTab === "premium" ? "default" : "ghost"}
-                className="flex-shrink-0 h-auto p-2"
+                className="flex-shrink-0 md:flex-shrink md:flex-1 h-auto p-2"
                 onClick={() => setCurrentTab("premium")}
               >
                 <EnhancedCard className="p-3 min-w-[120px]">
@@ -128,7 +128,7 @@ export function More() {
 
               <Button
                 variant={currentTab === "settings" ? "default" : "ghost"}
-                className="flex-shrink-0 h-auto p-2"
+                className="flex-shrink-0 md:flex-shrink md:flex-1 h-auto p-2"
                 onClick={() => setCurrentTab("settings")}
               >
                 <EnhancedCard className="p-3 min-w-[120px]">
