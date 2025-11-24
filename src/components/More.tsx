@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield } from "lucide-react";
+import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield, X } from "lucide-react";
 import { Notifications } from "./Notifications";
 import { AIChat } from "./AIChat";
 import { CurrencySelector } from "./CurrencySelector";
@@ -337,15 +337,14 @@ export function More() {
       {/* Admin Panel Dialog */}
       {showAdmin && (
         <div className="fixed inset-0 bg-background z-50 overflow-auto">
-          <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b p-4 flex items-center justify-between z-10">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              Admin Dashboard
-            </h2>
-            <Button variant="ghost" onClick={() => setShowAdmin(false)}>
-              Close
-            </Button>
-          </div>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setShowAdmin(false)}
+            className="fixed top-4 right-4 z-50"
+          >
+            <X className="h-5 w-5" />
+          </Button>
           <AdminPanel />
         </div>
       )}
