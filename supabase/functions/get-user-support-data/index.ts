@@ -31,12 +31,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: isAdmin } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
+    const { data: isAdmin, error: roleError } = await supabaseClient.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+
+    if (roleError) {
+      console.error('Error checking admin role:', roleError);
+      return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!isAdmin) {
       EdgeSecurityLogger.logSuspiciousActivity(req, 'get-user-support-data', 'Non-admin attempted to access user data', { userId: user.id });
