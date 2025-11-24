@@ -67,9 +67,10 @@ export default function Admin() {
   });
 
   // All Users
-  const { data: users } = useQuery({
+  const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
+      console.log("Fetching admin users...");
       const { data, error } = await supabase
         .from("profiles")
         .select(`
@@ -77,7 +78,13 @@ export default function Admin() {
           user_roles(role),
           subscribers(subscribed, subscription_tier, subscription_end)
         `);
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+      }
+      
+      console.log("Users fetched:", data?.length, "users");
       return data;
     },
     enabled: isAdmin === true,
@@ -323,16 +330,41 @@ export default function Admin() {
           </TabsContent>
 
           {/* Users Tab */}
-          <TabsContent value="users" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>View and manage all registered users</CardDescription>
-              </CardHeader>
-              <CardContent>
+        <TabsContent value="users" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>View and manage all registered users</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {usersLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Loading users...</p>
+                  </div>
+                </div>
+              )}
+              
+              {usersError && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center text-destructive">
+                    <p className="font-medium">Error loading users</p>
+                    <p className="text-sm">{usersError.message}</p>
+                  </div>
+                </div>
+              )}
+              
+              {!usersLoading && !usersError && users && users.length === 0 && (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-muted-foreground">No users found</p>
+                </div>
+              )}
+              
+              {!usersLoading && !usersError && users && users.length > 0 && (
                 <ScrollArea className="h-[600px]">
                   <div className="space-y-4">
-                    {users?.map((user: any) => (
+                    {users.map((user: any) => (
                       <Card key={user.id}>
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
@@ -371,9 +403,10 @@ export default function Admin() {
                     ))}
                   </div>
                 </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
           {/* Support Tab */}
           <TabsContent value="support" className="space-y-4">
