@@ -21,6 +21,7 @@ const Budget = lazy(() => import("./pages/Budget"));
 const Goals = lazy(() => import("./pages/Goals"));
 const MoneyHub = lazy(() => import("./pages/MoneyHub"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 const queryClient = new QueryClient();
 

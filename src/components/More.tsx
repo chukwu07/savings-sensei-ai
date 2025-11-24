@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User } from "lucide-react";
+import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield } from "lucide-react";
 import { Notifications } from "./Notifications";
 import { AIChat } from "./AIChat";
 import { CurrencySelector } from "./CurrencySelector";
@@ -13,13 +13,34 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileSettings } from "./ProfileSettings";
+import { useQuery } from "@tanstack/react-query";
+import { AdminPanel } from "./AdminPanel";
 
 export function More() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [currentTab, setCurrentTab] = useState("notifications");
+  const [showAdmin, setShowAdmin] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+
+  // Check if user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .single();
+      
+      return !!data;
+    },
+  });
 
   const sendBudgetAlerts = async () => {
     setIsLoading(true);
@@ -191,6 +212,30 @@ export function More() {
             {/* Profile Settings Section */}
             <ProfileSettings />
 
+            {/* Admin Panel Access */}
+            {isAdmin && (
+              <EnhancedCard variant="settings" className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Shield className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Admin Dashboard</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Access admin tools and analytics
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <Button onClick={() => setShowAdmin(true)} className="w-full">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Open Admin Panel
+                  </Button>
+                </div>
+              </EnhancedCard>
+            )}
+
             {/* Sign Out Section */}
             <EnhancedCard variant="settings" className="p-6">
               <div className="space-y-4">
@@ -279,6 +324,22 @@ export function More() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Admin Panel Dialog */}
+      {showAdmin && (
+        <div className="fixed inset-0 bg-background z-50 overflow-auto">
+          <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b p-4 flex items-center justify-between z-10">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Admin Dashboard
+            </h2>
+            <Button variant="ghost" onClick={() => setShowAdmin(false)}>
+              Close
+            </Button>
+          </div>
+          <AdminPanel />
+        </div>
+      )}
     </div>
   );
 }

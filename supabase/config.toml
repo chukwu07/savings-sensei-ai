@@ -1,5 +1,11 @@
 project_id = "egrljooargciueeppecq"
 
+[functions.get-admin-analytics]
+verify_jwt = true
+
+[functions.get-user-support-data]
+verify_jwt = true
+
 [functions.ai-chat]
 verify_jwt = true
 
