@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          details: Json | null
+          id: string
+          target_user_id: string | null
+          timestamp: string
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+          timestamp?: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
       budget_alerts: {
         Row: {
           alert_sent_at: string
