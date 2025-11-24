@@ -71,21 +71,70 @@ export default function Admin() {
     queryKey: ["admin-users"],
     queryFn: async () => {
       console.log("Fetching admin users...");
-      const { data, error } = await supabase
+
+      // 1) Fetch all profiles
+      const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select(`
-          *,
-          user_roles(role),
-          subscribers(subscribed, subscription_tier, subscription_end)
-        `);
-      
-      if (error) {
-        console.error("Error fetching users:", error);
-        throw error;
+        .select("*");
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
       }
-      
-      console.log("Users fetched:", data?.length, "users");
-      return data;
+
+      if (!profiles || profiles.length === 0) {
+        console.log("No profiles found");
+        return [];
+      }
+
+      const userIds = profiles.map((p: any) => p.user_id);
+
+      // 2) Fetch roles for these users
+      const { data: roles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+
+      if (rolesError) {
+        console.error("Error fetching user roles:", rolesError);
+        throw rolesError;
+      }
+
+      // 3) Fetch subscriptions for these users
+      const { data: subs, error: subsError } = await supabase
+        .from("subscribers")
+        .select("user_id, subscribed, subscription_tier, subscription_end")
+        .in("user_id", userIds);
+
+      if (subsError) {
+        console.error("Error fetching subscribers:", subsError);
+        throw subsError;
+      }
+
+      // 4) Index roles and subs by user_id for fast lookup
+      const rolesByUser = new Map<string, { role: string }[]>();
+      (roles || []).forEach((r: any) => {
+        const list = rolesByUser.get(r.user_id) ?? [];
+        list.push({ role: r.role });
+        rolesByUser.set(r.user_id, list);
+      });
+
+      const subsByUser = new Map<string, any>();
+      (subs || []).forEach((s: any) => {
+        subsByUser.set(s.user_id, s);
+      });
+
+      // 5) Merge into the shape expected by the UI
+      const merged = profiles.map((p: any) => ({
+        ...p,
+        user_roles: rolesByUser.get(p.user_id) ?? [],
+        subscribers: subsByUser.get(p.user_id)
+          ? [subsByUser.get(p.user_id)]
+          : [],
+      }));
+
+      console.log("Users fetched (merged):", merged.length, "users");
+      return merged;
     },
     enabled: isAdmin === true,
   });
