@@ -30,19 +30,28 @@ export default function Admin() {
 
   // Check if user is admin
   const { data: isAdmin, isLoading: checkingAdmin } = useQuery({
-    queryKey: ["is-admin"],
+    queryKey: ["is-admin-admin-page"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-      
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
-      
-      return !!data;
+      if (!user?.id) return false;
+
+      try {
+        const { data, error } = await supabase.rpc("has_role", {
+          _user_id: user.id,
+          _role: "admin",
+        });
+
+        if (error) {
+          console.error("Admin page admin check error:", error);
+          return false;
+        }
+
+        console.log("Admin page admin check result:", data);
+        return data === true;
+      } catch (error) {
+        console.error("Admin page admin check exception:", error);
+        return false;
+      }
     },
   });
 
