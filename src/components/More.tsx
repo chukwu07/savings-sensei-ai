@@ -330,6 +330,61 @@ export function More() {
                 </Button>
               </div>
             </EnhancedCard>
+
+            {/* Help & Support */}
+            <EnhancedCard variant="settings" className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Help & Support</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Get help and read our policies
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <a 
+                    href="mailto:support@budgetbuddyai.co.uk"
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">Contact Support</p>
+                      <p className="text-xs text-muted-foreground">support@budgetbuddyai.co.uk</p>
+                    </div>
+                  </a>
+
+                  <a 
+                    href="/privacy"
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">Privacy Policy</p>
+                    </div>
+                  </a>
+
+                  <a 
+                    href="/terms"
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">Terms of Service</p>
+                    </div>
+                  </a>
+                </div>
+
+                <div className="pt-4 border-t text-center text-xs text-muted-foreground">
+                  <p>BudgetBuddy AI v1.0</p>
+                  <p>© 2025 All rights reserved</p>
+                </div>
+              </div>
+            </EnhancedCard>
           </TabsContent>
         </Tabs>
       </div>
