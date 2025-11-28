@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -358,25 +359,25 @@ export function More() {
                     </div>
                   </a>
 
-                  <a 
-                    href="/privacy"
+                  <Link 
+                    to="/privacy"
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                   >
                     <Shield className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1">
                       <p className="font-medium text-sm">Privacy Policy</p>
                     </div>
-                  </a>
+                  </Link>
 
-                  <a 
-                    href="/terms"
+                  <Link 
+                    to="/terms"
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                   >
                     <Settings className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1">
                       <p className="font-medium text-sm">Terms of Service</p>
                     </div>
-                  </a>
+                  </Link>
                 </div>
 
                 <div className="pt-4 border-t text-center text-xs text-muted-foreground">

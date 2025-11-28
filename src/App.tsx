@@ -1,4 +1,5 @@
 import { Suspense, useState, lazy, useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +23,8 @@ const Goals = lazy(() => import("./pages/Goals"));
 const MoneyHub = lazy(() => import("./pages/MoneyHub"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Admin = lazy(() => import("./pages/Admin"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 const queryClient = new QueryClient();
 
@@ -116,9 +119,23 @@ const App = () => (
           <PushNotificationProvider>
             <NetworkProvider>
               <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <AppContent />
+                <BrowserRouter>
+                  <Toaster />
+                  <Sonner />
+                  <Routes>
+                    <Route path="/privacy" element={
+                      <Suspense fallback={<LoadingFallback />}>
+                        <PrivacyPolicy />
+                      </Suspense>
+                    } />
+                    <Route path="/terms" element={
+                      <Suspense fallback={<LoadingFallback />}>
+                        <TermsOfService />
+                      </Suspense>
+                    } />
+                    <Route path="/*" element={<AppContent />} />
+                  </Routes>
+                </BrowserRouter>
               </TooltipProvider>
             </NetworkProvider>
           </PushNotificationProvider>
