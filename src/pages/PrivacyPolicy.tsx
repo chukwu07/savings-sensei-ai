@@ -121,8 +121,7 @@ export default function PrivacyPolicy() {
                 <h2 className="text-xl font-semibold text-foreground mb-3">10. Contact Us</h2>
                 <p>If you have any questions about this privacy policy, please contact us at:</p>
                 <div className="mt-2 p-4 bg-muted rounded-lg">
-                  <p>Email: privacy@budgetbuddy.app</p>
-                  <p>Address: [Your Business Address]</p>
+                  <p>Email: support@budgetbuddyai.co.uk</p>
                 </div>
               </section>
             </div>

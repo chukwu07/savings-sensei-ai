@@ -150,8 +150,7 @@ export default function TermsOfService() {
                 <h2 className="text-xl font-semibold text-foreground mb-3">13. Contact Information</h2>
                 <p>For questions about these Terms of Service, please contact us at:</p>
                 <div className="mt-2 p-4 bg-muted rounded-lg">
-                  <p>Email: support@budgetbuddy.app</p>
-                  <p>Address: [Your Business Address]</p>
+                  <p>Email: support@budgetbuddyai.co.uk</p>
                 </div>
               </section>
             </div>
