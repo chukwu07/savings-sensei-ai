@@ -1,10 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 
 export default function TermsOfService() {
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
@@ -12,7 +14,7 @@ export default function TermsOfService() {
         <div className="mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => window.location.href = '/'}
+            onClick={() => navigate('/')}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -26,7 +28,7 @@ export default function TermsOfService() {
             
             <div className="space-y-6 text-muted-foreground">
               <div>
-                <p className="text-sm mb-4">Last updated: {new Date().toLocaleDateString()}</p>
+                <p className="text-sm mb-4">Last updated: 28 November 2025</p>
               </div>
 
               <section>
