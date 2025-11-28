@@ -21,7 +21,7 @@ export function LegalFooter() {
               Terms of Service
             </button>
             <a 
-              href="mailto:support@budgetbuddy.app" 
+              href="mailto:support@budgetbuddyai.co.uk" 
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               Contact Support
