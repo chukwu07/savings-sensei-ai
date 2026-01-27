@@ -31,7 +31,7 @@ export function useBudgets() {
       'service_qjr2kr6',
       'template_4baxleq',
       {
-        email: userEmail,
+        to_email: userEmail,
         from_name: 'Budget Buddy',
         from_email: 'info.helpstep@gmail.com',
         reply_to: 'info.helpstep@gmail.com',
