@@ -91,6 +91,7 @@ export function TransactionPlainView({
                     <label className="text-xs text-muted-foreground mb-1 block">Amount</label>
                     <Input
                       type="number"
+                      inputMode="decimal"
                       step="0.01"
                       value={editForm.amount}
                       onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}

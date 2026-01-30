@@ -262,7 +262,7 @@ export function SavingsGoals() {
           
           <div className="space-y-2">
             <Label htmlFor="target-amount">Target Amount</Label>
-            <Input id="target-amount" type="number" placeholder="0.00" value={newGoal.target} onChange={e => setNewGoal(prev => ({
+            <Input id="target-amount" type="number" inputMode="decimal" placeholder="0.00" value={newGoal.target} onChange={e => setNewGoal(prev => ({
             ...prev,
             target: e.target.value
           }))} />
@@ -270,7 +270,7 @@ export function SavingsGoals() {
 
           <div className="space-y-2">
             <Label htmlFor="current-amount">Current Amount</Label>
-            <Input id="current-amount" type="number" placeholder="0.00" value={newGoal.current} onChange={e => setNewGoal(prev => ({
+            <Input id="current-amount" type="number" inputMode="decimal" placeholder="0.00" value={newGoal.current} onChange={e => setNewGoal(prev => ({
             ...prev,
             current: e.target.value
           }))} />
@@ -351,7 +351,7 @@ export function SavingsGoals() {
                     
                     <div className="space-y-2">
                       <Label htmlFor={`edit-target-${goal.id}`}>Target Amount</Label>
-                      <Input id={`edit-target-${goal.id}`} type="number" value={editForm.target_amount} onChange={e => setEditForm(prev => ({
+                      <Input id={`edit-target-${goal.id}`} type="number" inputMode="decimal" value={editForm.target_amount} onChange={e => setEditForm(prev => ({
                     ...prev,
                     target_amount: e.target.value
                   }))} />
@@ -359,7 +359,7 @@ export function SavingsGoals() {
                     
                     <div className="space-y-2">
                       <Label htmlFor={`edit-current-${goal.id}`}>Current Amount</Label>
-                      <Input id={`edit-current-${goal.id}`} type="number" value={editForm.current_amount} onChange={e => setEditForm(prev => ({
+                      <Input id={`edit-current-${goal.id}`} type="number" inputMode="decimal" value={editForm.current_amount} onChange={e => setEditForm(prev => ({
                     ...prev,
                     current_amount: e.target.value
                   }))} />

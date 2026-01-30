@@ -209,6 +209,7 @@ export function OfflineTransactions() {
             <Input
               id="amount"
               type="number"
+              inputMode="decimal"
               step="0.01"
               placeholder="0.00"
               value={newTransaction.amount}

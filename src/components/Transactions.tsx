@@ -161,6 +161,7 @@ export function Transactions() {
             <Input
               id="amount"
               type="number"
+              inputMode="decimal"
               placeholder="0.00"
               value={newTransaction.amount}
               onChange={(e) => setNewTransaction(prev => ({ ...prev, amount: e.target.value }))}

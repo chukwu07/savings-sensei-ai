@@ -219,6 +219,7 @@ export default function MoneyHub() {
                 <h3 className="font-medium text-success">💵 Add Income</h3>
                 <Input
                   type="number"
+                  inputMode="decimal"
                   placeholder="Amount"
                   value={addIncomeAmount}
                   onChange={(e) => setAddIncomeAmount(e.target.value)}
@@ -260,6 +261,7 @@ export default function MoneyHub() {
               <h3 className="font-medium text-destructive text-sm">💳 Add Expense</h3>
               <Input
                 type="number"
+                inputMode="decimal"
                 placeholder="Amount"
                 value={addExpenseAmount}
                 onChange={(e) => setAddExpenseAmount(e.target.value)}
@@ -393,6 +395,7 @@ export default function MoneyHub() {
               <Input
                 id="edit-amount"
                 type="number"
+                inputMode="decimal"
                 value={editForm.amount}
                 onChange={(e) => setEditForm(prev => ({...prev, amount: e.target.value}))}
                 placeholder="0.00"

@@ -432,7 +432,7 @@ export function BudgetManagement() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="allocated">Budget Amount ({selectedCurrency.symbol})</Label>
-                  <Input id="allocated" type="number" placeholder="0.00" value={formData.allocated} onChange={e => setFormData(prev => ({
+                  <Input id="allocated" type="number" inputMode="decimal" placeholder="0.00" value={formData.allocated} onChange={e => setFormData(prev => ({
                   ...prev,
                   allocated: e.target.value
                 }))} />
@@ -647,7 +647,7 @@ export function BudgetManagement() {
             
             <div className="space-y-2">
               <Label htmlFor="edit-allocated">Budget Amount ({selectedCurrency.symbol})</Label>
-              <Input id="edit-allocated" type="number" placeholder="0.00" value={editFormData.allocated} onChange={e => setEditFormData(prev => ({
+              <Input id="edit-allocated" type="number" inputMode="decimal" placeholder="0.00" value={editFormData.allocated} onChange={e => setEditFormData(prev => ({
               ...prev,
               allocated: e.target.value
             }))} />
