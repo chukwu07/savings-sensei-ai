@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { checkoutSchema, formatZodError } from "../_shared/validation.ts";
+import { EdgeSecurityLogger } from "../_shared/securityUtils.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,8 +41,24 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { priceId } = await req.json();
-    logStep("Request parsed", { priceId });
+    // Parse and validate input with Zod schema
+    const body = await req.json();
+    const validation = checkoutSchema.safeParse(body);
+    
+    if (!validation.success) {
+      const errorMsg = formatZodError(validation.error);
+      logStep("ERROR: Invalid input", { errors: errorMsg });
+      EdgeSecurityLogger.logSuspiciousActivity(req, 'create-checkout', 'Invalid input', { 
+        errors: errorMsg 
+      });
+      return new Response(
+        JSON.stringify({ error: "Invalid request data" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { priceId } = validation.data;
+    logStep("Request validated", { priceId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     

@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { subscriptionSchema, formatZodError } from '../_shared/validation.ts';
+import { EdgeSecurityLogger } from '../_shared/securityUtils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,17 +53,25 @@ serve(async (req) => {
 
     logStep('User authenticated', { userId: user.id, email: user.email });
 
-    const { priceId, paymentMethodId, customerId } = await req.json();
-
-    if (!priceId || !paymentMethodId || !customerId) {
-      logStep('ERROR: Missing required fields');
+    // Parse and validate input with Zod schema
+    const body = await req.json();
+    const validation = subscriptionSchema.safeParse(body);
+    
+    if (!validation.success) {
+      const errorMsg = formatZodError(validation.error);
+      logStep('ERROR: Invalid input', { errors: errorMsg });
+      EdgeSecurityLogger.logSuspiciousActivity(req, 'create-subscription', 'Invalid input', { 
+        errors: errorMsg 
+      });
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Invalid request data' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    logStep('Request data received', { priceId, customerId });
+    const { priceId, paymentMethodId, customerId } = validation.data;
+
+    logStep('Request data validated', { priceId, customerId });
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
