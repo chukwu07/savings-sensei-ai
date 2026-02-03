@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, 
@@ -411,47 +410,43 @@ export default function Admin() {
               )}
               
               {!usersLoading && !usersError && users && users.length > 0 && (
-                <ScrollArea className="h-[600px]">
-                  <div className="space-y-4">
-                    {users.map((user: any) => (
-                      <Card key={user.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                              <p className="font-medium">{user.display_name || "No name"}</p>
-                              <p className="text-sm text-muted-foreground">ID: {user.user_id}</p>
-                              <div className="flex gap-2 mt-2">
-                                {user.user_roles?.map((role: any) => (
-                                  <Badge key={role.role} variant="secondary">
-                                    {role.role}
-                                  </Badge>
-                                ))}
-                                {user.subscribers?.[0]?.subscribed && (
-                                  <Badge variant="default">
-                                    {user.subscribers[0].subscription_tier}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                logAuditEvent("VIEW_USER_PROFILE", user.user_id);
-                                toast({
-                                  title: "User Profile Accessed",
-                                  description: "Action logged in audit trail",
-                                });
-                              }}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
+                 <div className="space-y-4">
+                   {users.map((user: any) => (
+                     <Card key={user.id}>
+                       <CardContent className="pt-6">
+                         <div className="flex items-center justify-between">
+                           <div className="space-y-1">
+                             <p className="font-medium">{user.display_name || "No name"}</p>
+                             <p className="text-sm text-muted-foreground">ID: {user.user_id}</p>
+                             <div className="flex gap-2 mt-2">
+                               {user.user_roles?.map((role: any) => (
+                                 <Badge key={role.role} variant="secondary">
+                                   {role.role}
+                                 </Badge>
+                               ))}
+                               {user.subscribers?.[0]?.subscribed && (
+                                 <Badge variant="default">{user.subscribers[0].subscription_tier}</Badge>
+                               )}
+                             </div>
+                           </div>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => {
+                               logAuditEvent("VIEW_USER_PROFILE", user.user_id);
+                               toast({
+                                 title: "User Profile Accessed",
+                                 description: "Action logged in audit trail",
+                               });
+                             }}
+                           >
+                             View Details
+                           </Button>
+                         </div>
+                       </CardContent>
+                     </Card>
+                   ))}
+                 </div>
               )}
             </CardContent>
           </Card>
@@ -518,34 +513,28 @@ export default function Admin() {
                 <CardDescription>All admin actions are logged here</CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px]">
-                  <div className="space-y-2">
-                    {auditLogs?.map((log: any) => (
-                      <Card key={log.id}>
-                        <CardContent className="pt-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{log.action}</p>
-                              <p className="text-sm text-muted-foreground">
-                                Admin: {log.admin_user_id}
-                              </p>
-                              {log.target_user_id && (
-                                <p className="text-sm text-muted-foreground">
-                                  Target: {log.target_user_id}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(log.timestamp).toLocaleString()}
-                              </p>
-                            </div>
+                <div className="space-y-2">
+                  {auditLogs?.map((log: any) => (
+                    <Card key={log.id}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{log.action}</p>
+                            <p className="text-sm text-muted-foreground">Admin: {log.admin_user_id}</p>
+                            {log.target_user_id && (
+                              <p className="text-sm text-muted-foreground">Target: {log.target_user_id}</p>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
+                          <div className="text-right">
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(log.timestamp).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
