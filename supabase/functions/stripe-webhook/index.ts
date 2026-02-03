@@ -133,19 +133,82 @@ Deno.serve(async (req) => {
     case 'customer.subscription.created':
     case 'customer.subscription.updated': {
           const subscription = event.data.object as Stripe.Subscription;
+          
+          // Get user_id from subscription metadata (set in create-checkout)
+          const userId = subscription.metadata.supabase_user_id;
+          
           logStep('Processing subscription event', {
             subscriptionId: subscription.id,
             customerId: subscription.customer,
             status: subscription.status,
+            userId: userId || 'NOT_FOUND',
           });
 
-          // Get customer email
+          if (!userId) {
+            // If no user_id in metadata, try to find existing subscriber by stripe_customer_id
+            const { data: existingSubscriber } = await supabase
+              .from('subscribers')
+              .select('user_id')
+              .eq('stripe_customer_id', subscription.customer as string)
+              .single();
+            
+            if (!existingSubscriber?.user_id) {
+              logStep('Warning: No user_id in subscription metadata and no existing subscriber found');
+              // Skip processing - this subscription cannot be linked to a user
+              processed = true;
+              break;
+            }
+            
+            // Use the user_id from existing subscriber
+            const existingUserId = existingSubscriber.user_id;
+            
+            // Get customer email for logging
+            const customer = await stripe.customers.retrieve(subscription.customer as string);
+            const customerEmail = (customer as Stripe.Customer).email;
+
+            // Determine subscription tier based on price
+            const priceId = subscription.items.data[0]?.price.id;
+            const price = await stripe.prices.retrieve(priceId);
+            const amount = price.unit_amount || 0;
+            
+            let subscriptionTier = 'free';
+            if (amount >= 2000) {
+              subscriptionTier = 'premium';
+            } else if (amount >= 1000) {
+              subscriptionTier = 'pro';
+            }
+
+            const isActive = subscription.status === 'active' || subscription.status === 'trialing';
+
+            const { error: upsertError } = await supabase
+              .from('subscribers')
+              .upsert({
+                user_id: existingUserId,
+                email: customerEmail || '',
+                stripe_customer_id: subscription.customer as string,
+                stripe_subscription_id: subscription.id,
+                subscribed: isActive,
+                subscription_tier: isActive ? subscriptionTier : null,
+                subscription_end: isActive && subscription.current_period_end
+                  ? new Date(subscription.current_period_end * 1000).toISOString()
+                  : null,
+                updated_at: new Date().toISOString(),
+              }, {
+                onConflict: 'user_id'
+              });
+
+            if (upsertError) {
+              throw upsertError;
+            }
+
+            logStep('Subscription updated via existing subscriber', { userId: existingUserId, tier: subscriptionTier, active: isActive });
+            processed = true;
+            break;
+          }
+
+          // User ID found in metadata - process normally
           const customer = await stripe.customers.retrieve(subscription.customer as string);
           const customerEmail = (customer as Stripe.Customer).email;
-
-          if (!customerEmail) {
-            throw new Error('Customer email not found');
-          }
 
           // Determine subscription tier based on price
           const priceId = subscription.items.data[0]?.price.id;
@@ -162,12 +225,14 @@ Deno.serve(async (req) => {
           // Check if subscription is active
           const isActive = subscription.status === 'active' || subscription.status === 'trialing';
 
-          // Update subscriber record
+          // Update subscriber record using user_id as the key
           const { error: upsertError } = await supabase
             .from('subscribers')
             .upsert({
-              email: customerEmail,
+              user_id: userId,
+              email: customerEmail || '',
               stripe_customer_id: subscription.customer as string,
+              stripe_subscription_id: subscription.id,
               subscribed: isActive,
               subscription_tier: isActive ? subscriptionTier : null,
               subscription_end: isActive && subscription.current_period_end
@@ -175,34 +240,65 @@ Deno.serve(async (req) => {
                 : null,
               updated_at: new Date().toISOString(),
             }, {
-              onConflict: 'email'
+              onConflict: 'user_id'
             });
 
           if (upsertError) {
             throw upsertError;
           }
 
-          logStep('Subscription updated in database', { email: customerEmail, tier: subscriptionTier, active: isActive });
+          logStep('Subscription updated in database', { userId, tier: subscriptionTier, active: isActive });
           processed = true;
           break;
         }
 
         case 'customer.subscription.deleted': {
           const subscription = event.data.object as Stripe.Subscription;
+          
+          // Get user_id from subscription metadata
+          const userId = subscription.metadata.supabase_user_id;
+          
           logStep('Processing subscription deletion', {
             subscriptionId: subscription.id,
             customerId: subscription.customer,
+            userId: userId || 'NOT_FOUND',
           });
 
-          // Get customer email
-          const customer = await stripe.customers.retrieve(subscription.customer as string);
-          const customerEmail = (customer as Stripe.Customer).email;
+          if (!userId) {
+            // Try to find subscriber by stripe_customer_id
+            const { data: existingSubscriber, error: findError } = await supabase
+              .from('subscribers')
+              .select('user_id')
+              .eq('stripe_customer_id', subscription.customer as string)
+              .single();
+            
+            if (findError || !existingSubscriber?.user_id) {
+              logStep('Warning: Cannot find subscriber to delete - no user_id in metadata or database');
+              processed = true;
+              break;
+            }
 
-          if (!customerEmail) {
-            throw new Error('Customer email not found');
+            // Update subscriber to remove premium access using user_id
+            const { error: updateError } = await supabase
+              .from('subscribers')
+              .update({
+                subscribed: false,
+                subscription_tier: null,
+                subscription_end: null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('user_id', existingSubscriber.user_id);
+
+            if (updateError) {
+              throw updateError;
+            }
+
+            logStep('Subscription cancelled via existing subscriber', { userId: existingSubscriber.user_id });
+            processed = true;
+            break;
           }
 
-          // Update subscriber to remove premium access
+          // Update subscriber to remove premium access using user_id
           const { error: updateError } = await supabase
             .from('subscribers')
             .update({
@@ -211,13 +307,13 @@ Deno.serve(async (req) => {
               subscription_end: null,
               updated_at: new Date().toISOString(),
             })
-            .eq('email', customerEmail);
+            .eq('user_id', userId);
 
           if (updateError) {
             throw updateError;
           }
 
-          logStep('Subscription cancelled in database', { email: customerEmail });
+          logStep('Subscription cancelled in database', { userId });
           processed = true;
           break;
         }
