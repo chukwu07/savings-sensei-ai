@@ -392,7 +392,7 @@ export function More() {
 
       {/* Admin Panel Dialog */}
       {showAdmin && (
-        <div className="fixed inset-0 bg-background z-50 overflow-auto">
+        <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
           <Button 
             variant="ghost" 
             size="icon"
