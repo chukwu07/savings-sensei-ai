@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
@@ -24,6 +24,24 @@ export function More() {
   const [showAdmin, setShowAdmin] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+
+  // Prevent background scroll when admin overlay is open
+  useEffect(() => {
+    if (!showAdmin) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, [showAdmin]);
 
   // Check if user is admin
   const { data: isAdmin } = useQuery({
@@ -392,7 +410,7 @@ export function More() {
 
       {/* Admin Panel Dialog */}
       {showAdmin && (
-        <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-background z-50 overflow-y-auto overscroll-contain h-[100dvh]">
           <Button 
             variant="ghost" 
             size="icon"
