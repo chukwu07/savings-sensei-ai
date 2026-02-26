@@ -117,11 +117,14 @@ export class OfflineStorageService {
 
   // Transaction operations
   static async getTransactions(userId: string): Promise<LocalTransaction[]> {
-    return await offlineDB.transactions
+    const items = await offlineDB.transactions
       .where('user_id')
       .equals(userId)
-      .reverse()
-      .sortBy('date');
+      .toArray();
+    return items.sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime() || 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }
 
   static async addTransaction(transaction: Omit<LocalTransaction, 'synced' | 'pending_sync'>) {
@@ -156,10 +159,13 @@ export class OfflineStorageService {
 
   // Budget operations
   static async getBudgets(userId: string): Promise<LocalBudget[]> {
-    return await offlineDB.budgets
+    const items = await offlineDB.budgets
       .where('user_id')
       .equals(userId)
       .toArray();
+    return items.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }
 
   static async addBudget(budget: Omit<LocalBudget, 'synced' | 'pending_sync'>) {
@@ -194,10 +200,13 @@ export class OfflineStorageService {
 
   // Savings goals operations
   static async getSavingsGoals(userId: string): Promise<LocalSavingsGoal[]> {
-    return await offlineDB.savings_goals
+    const items = await offlineDB.savings_goals
       .where('user_id')
       .equals(userId)
       .toArray();
+    return items.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }
 
   static async addSavingsGoal(goal: Omit<LocalSavingsGoal, 'synced' | 'pending_sync'>) {

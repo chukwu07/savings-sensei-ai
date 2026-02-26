@@ -28,7 +28,7 @@ export function useSavingsGoals() {
       const { data, error } = await supabase
         .from('savings_goals')
         .select('*')
-        .order('deadline');
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setGoals(data || []);
