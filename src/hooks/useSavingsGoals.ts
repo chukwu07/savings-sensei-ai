@@ -58,7 +58,7 @@ export function useSavingsGoals() {
 
       if (error) throw error;
       
-      setGoals(prev => [...prev, data]);
+      setGoals(prev => [data, ...prev]);
       toast({
         title: "Success",
         description: "Savings goal created successfully",

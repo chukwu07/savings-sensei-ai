@@ -67,7 +67,7 @@ export function useBudgets() {
       const { data, error } = await supabase
         .from('budgets')
         .select('*')
-        .order('category');
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setBudgets(data || []);
@@ -97,7 +97,7 @@ export function useBudgets() {
 
       if (error) throw error;
       
-      setBudgets(prev => [...prev, data]);
+      setBudgets(prev => [data, ...prev]);
       toast({
         title: "Success",
         description: "Budget created successfully",
