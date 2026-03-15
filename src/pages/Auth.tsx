@@ -21,8 +21,24 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
+
+  // Capture ?ref= URL param on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      localStorage.setItem('budgetbuddy_referral_code', ref.toUpperCase());
+      setReferralCode(ref.toUpperCase());
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      const stored = localStorage.getItem('budgetbuddy_referral_code');
+      if (stored) setReferralCode(stored);
+    }
+  }, []);
 
   // Check for password recovery session
   useEffect(() => {
