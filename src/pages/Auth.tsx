@@ -364,6 +364,23 @@ export default function Auth() {
           </div>
         </div>
 
+        <div>
+          <Label htmlFor="referralCode" className="text-sm font-medium text-foreground">
+            Referral Code <span className="text-muted-foreground">(optional)</span>
+          </Label>
+          <div className="relative mt-1">
+            <Input
+              id="referralCode"
+              type="text"
+              placeholder="e.g. ALICE50"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+              className="h-12 pl-10"
+            />
+            <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+
         <Button 
           type="submit" 
           className="w-full h-12 text-base font-semibold bg-gradient-primary hover:opacity-90 transition-all duration-300"
