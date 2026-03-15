@@ -143,6 +143,9 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          referral_code: string | null
+          referral_count: number
+          referrer_user_id: string | null
           updated_at: string
           user_id: string
         }
@@ -151,6 +154,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          referral_code?: string | null
+          referral_count?: number
+          referrer_user_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -159,8 +165,94 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          referral_code?: string | null
+          referral_count?: number
+          referrer_user_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      promo_code_redemptions: {
+        Row: {
+          id: string
+          promo_code_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          promo_code_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          promo_code_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_redemptions_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_codes: {
+        Row: {
+          campaign_name: string | null
+          code: string
+          commission_percent: number
+          created_at: string
+          created_by: string
+          current_uses: number
+          description: string
+          duration_days: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          referrer_user_id: string | null
+          subscription_tier: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_name?: string | null
+          code: string
+          commission_percent?: number
+          created_at?: string
+          created_by: string
+          current_uses?: number
+          description?: string
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          referrer_user_id?: string | null
+          subscription_tier?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_name?: string | null
+          code?: string
+          commission_percent?: number
+          created_at?: string
+          created_by?: string
+          current_uses?: number
+          description?: string
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          referrer_user_id?: string | null
+          subscription_tier?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -238,6 +330,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      referral_commissions: {
+        Row: {
+          commission_amount: number
+          commission_percent: number
+          created_at: string
+          id: string
+          payment_amount: number
+          promo_code_id: string | null
+          referred_user_id: string
+          referrer_user_id: string
+          status: string
+          stripe_invoice_id: string
+        }
+        Insert: {
+          commission_amount: number
+          commission_percent: number
+          created_at?: string
+          id?: string
+          payment_amount: number
+          promo_code_id?: string | null
+          referred_user_id: string
+          referrer_user_id: string
+          status?: string
+          stripe_invoice_id: string
+        }
+        Update: {
+          commission_amount?: number
+          commission_percent?: number
+          created_at?: string
+          id?: string
+          payment_amount?: number
+          promo_code_id?: string | null
+          referred_user_id?: string
+          referrer_user_id?: string
+          status?: string
+          stripe_invoice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_commissions_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       savings_goals: {
         Row: {
@@ -347,6 +486,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          manual_override: boolean
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscribed: boolean
@@ -360,6 +500,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          manual_override?: boolean
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscribed?: boolean
@@ -373,6 +514,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          manual_override?: boolean
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscribed?: boolean
