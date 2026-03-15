@@ -325,6 +325,87 @@ Deno.serve(async (req) => {
             customerId: invoice.customer,
             amount: invoice.amount_paid,
           });
+
+          // Commission logic: find who referred the paying user
+          try {
+            // Find the user_id for this customer
+            const { data: subscriber } = await supabase
+              .from('subscribers')
+              .select('user_id')
+              .eq('stripe_customer_id', invoice.customer as string)
+              .maybeSingle();
+
+            if (subscriber?.user_id) {
+              // Get the referrer from profiles
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('referrer_user_id')
+                .eq('user_id', subscriber.user_id)
+                .maybeSingle();
+
+              if (profile?.referrer_user_id) {
+                // Find the promo code that links them (for commission %)
+                const { data: redemption } = await supabase
+                  .from('promo_code_redemptions')
+                  .select('promo_code_id')
+                  .eq('user_id', subscriber.user_id)
+                  .maybeSingle();
+
+                let commissionPercent = 0;
+                let promoCodeId: string | null = null;
+
+                if (redemption?.promo_code_id) {
+                  const { data: promoCode } = await supabase
+                    .from('promo_codes')
+                    .select('id, commission_percent')
+                    .eq('id', redemption.promo_code_id)
+                    .maybeSingle();
+
+                  if (promoCode) {
+                    commissionPercent = promoCode.commission_percent || 0;
+                    promoCodeId = promoCode.id;
+                  }
+                }
+
+                if (commissionPercent > 0) {
+                  const paymentAmount = (invoice.amount_paid || 0) / 100; // Convert from cents
+                  const commissionAmount = paymentAmount * commissionPercent / 100;
+
+                  // Insert commission — UNIQUE on stripe_invoice_id prevents duplicates
+                  const { error: commError } = await supabase
+                    .from('referral_commissions')
+                    .insert({
+                      referrer_user_id: profile.referrer_user_id,
+                      referred_user_id: subscriber.user_id,
+                      promo_code_id: promoCodeId,
+                      stripe_invoice_id: invoice.id,
+                      payment_amount: paymentAmount,
+                      commission_percent: commissionPercent,
+                      commission_amount: commissionAmount,
+                      status: 'pending',
+                    });
+
+                  if (commError) {
+                    // UNIQUE violation = already processed (idempotent)
+                    if (commError.code === '23505') {
+                      logStep('Commission already logged (dedup)', { invoiceId: invoice.id });
+                    } else {
+                      logStep('Error logging commission', { error: commError });
+                    }
+                  } else {
+                    logStep('Commission logged', {
+                      referrer: profile.referrer_user_id,
+                      amount: commissionAmount,
+                      percent: commissionPercent,
+                    });
+                  }
+                }
+              }
+            }
+          } catch (commErr: any) {
+            logStep('Commission processing error (non-fatal)', { error: commErr.message });
+          }
+
           processed = true;
           break;
         }

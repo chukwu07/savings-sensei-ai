@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type AuthScreen = 'sign-in' | 'create-account' | 'log-in' | 'loading' | 'forgot-password' | 'reset-password';
@@ -21,8 +21,24 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
+
+  // Capture ?ref= URL param on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      localStorage.setItem('budgetbuddy_referral_code', ref.toUpperCase());
+      setReferralCode(ref.toUpperCase());
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      const stored = localStorage.getItem('budgetbuddy_referral_code');
+      if (stored) setReferralCode(stored);
+    }
+  }, []);
 
   // Check for password recovery session
   useEffect(() => {
@@ -93,6 +109,33 @@ export default function Auth() {
       } else {
         // Store email for future context
         localStorage.setItem('budgetbuddy_last_email', email);
+        
+        // Redeem referral/promo code if present
+        const codeToRedeem = referralCode || localStorage.getItem('budgetbuddy_referral_code');
+        if (codeToRedeem) {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              const { data, error: redeemError } = await supabase.functions.invoke('redeem-promo-code', {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+                body: { code: codeToRedeem },
+              });
+              
+              if (redeemError) {
+                console.error('Promo code redemption failed:', redeemError);
+              } else if (data?.success) {
+                toast({
+                  title: "🎉 Promo Code Applied!",
+                  description: `You've been upgraded to ${data.subscription_tier}!`,
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error redeeming promo code:', err);
+          } finally {
+            localStorage.removeItem('budgetbuddy_referral_code');
+          }
+        }
         // Account created successfully - user will be redirected by auth state change
       }
     } catch (error) {
@@ -318,6 +361,23 @@ export default function Auth() {
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="referralCode" className="text-sm font-medium text-foreground">
+            Referral Code <span className="text-muted-foreground">(optional)</span>
+          </Label>
+          <div className="relative mt-1">
+            <Input
+              id="referralCode"
+              type="text"
+              placeholder="e.g. ALICE50"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+              className="h-12 pl-10"
+            />
+            <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           </div>
         </div>
 
