@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type AuthScreen = 'sign-in' | 'create-account' | 'log-in' | 'loading' | 'forgot-password' | 'reset-password';
