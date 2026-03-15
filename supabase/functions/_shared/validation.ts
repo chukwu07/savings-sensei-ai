@@ -30,6 +30,11 @@ export const transactionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 });
 
+// Promo code redemption validation
+export const promoCodeRedemptionSchema = z.object({
+  code: z.string().trim().min(3).max(30).regex(/^[A-Za-z0-9_-]+$/, 'Invalid promo code format')
+});
+
 // Helper function to format Zod errors
 export function formatZodError(error: z.ZodError): string {
   return error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');

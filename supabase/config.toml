@@ -44,3 +44,6 @@ verify_jwt = true
 
 [functions.create-subscription]
 verify_jwt = true
+
+[functions.redeem-promo-code]
+verify_jwt = true
