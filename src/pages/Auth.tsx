@@ -109,6 +109,33 @@ export default function Auth() {
       } else {
         // Store email for future context
         localStorage.setItem('budgetbuddy_last_email', email);
+        
+        // Redeem referral/promo code if present
+        const codeToRedeem = referralCode || localStorage.getItem('budgetbuddy_referral_code');
+        if (codeToRedeem) {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              const { data, error: redeemError } = await supabase.functions.invoke('redeem-promo-code', {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+                body: { code: codeToRedeem },
+              });
+              
+              if (redeemError) {
+                console.error('Promo code redemption failed:', redeemError);
+              } else if (data?.success) {
+                toast({
+                  title: "🎉 Promo Code Applied!",
+                  description: `You've been upgraded to ${data.subscription_tier}!`,
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error redeeming promo code:', err);
+          } finally {
+            localStorage.removeItem('budgetbuddy_referral_code');
+          }
+        }
         // Account created successfully - user will be redirected by auth state change
       }
     } catch (error) {
