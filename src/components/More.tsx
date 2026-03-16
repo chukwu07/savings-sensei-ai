@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProfileSettings } from "./ProfileSettings";
 import { useQuery } from "@tanstack/react-query";
 import { AdminPanel } from "./AdminPanel";
+import { ReferralDashboard } from "./ReferralDashboard";
 
 export function More() {
   const [isLoading, setIsLoading] = useState(false);
