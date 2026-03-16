@@ -419,6 +419,10 @@ export function More() {
               </div>
             </EnhancedCard>
           </TabsContent>
+
+          <TabsContent value="referrals">
+            <ReferralDashboard />
+          </TabsContent>
         </Tabs>
       </div>
 
