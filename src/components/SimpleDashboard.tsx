@@ -17,7 +17,7 @@ import { SwipeableCard } from "@/components/enhanced/SwipeableCard";
 import { AchievementBadge } from "@/components/enhanced/AchievementBadge";
 import { useSmartAlerts } from "@/hooks/useSmartAlerts";
 import { useAchievements } from "@/hooks/useAchievements";
-import { BudgetAlertCard } from "@/components/BudgetAlertCard";
+import { ReferralPrompt } from "@/components/ReferralPrompt";
 import { PremiumBadge } from "@/components/premium/PremiumBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -448,8 +448,8 @@ export function SimpleDashboard() {
         </div>
       </EnhancedCard>
 
-      {/* Budget Alert Card - Only for Home Screen */}
-      <BudgetAlertCard />
+      {/* Smart Referral Prompt — after good health score */}
+      {healthStatus.variant === 'success' && <ReferralPrompt />}
 
       {/* Recent Achievements */}
       {recentAchievements.length > 0 && (
@@ -544,6 +544,9 @@ export function SimpleDashboard() {
           <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary/5 to-transparent rounded-full transform translate-x-10 -translate-y-10" />
         </EnhancedCard>
       )}
+
+      {/* Smart Referral Prompt — after AI insights */}
+      {aiInsights.length > 0 && <ReferralPrompt />}
     </div>
   );
 } 
