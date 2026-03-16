@@ -15,7 +15,7 @@ const SHARE_BASE_URL = "https://budgetbuddyai.co.uk/?ref=";
 
 export function ReferralDashboard() {
   const { user } = useAuth();
-  const { formatAmount } = useCurrency();
+  const { formatCurrency } = useCurrency();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
