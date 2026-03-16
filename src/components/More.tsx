@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield, X } from "lucide-react";
+import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield, X, Gift } from "lucide-react";
 import { Notifications } from "./Notifications";
 import { AIChat } from "./AIChat";
 import { CurrencySelector } from "./CurrencySelector";
