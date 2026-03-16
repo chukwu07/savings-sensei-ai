@@ -208,6 +208,7 @@ export function More() {
             <TabsTrigger value="ai">AI Chat</TabsTrigger>
             <TabsTrigger value="premium">Premium</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="notifications">
