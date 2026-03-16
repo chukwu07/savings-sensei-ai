@@ -70,7 +70,7 @@ export function ReferralDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, created_at")
+        .select("display_name, created_at, referral_verified")
         .eq("referrer_user_id", user!.id);
       if (error) throw error;
       return data;
