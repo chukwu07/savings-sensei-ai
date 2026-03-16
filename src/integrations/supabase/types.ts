@@ -145,6 +145,7 @@ export type Database = {
           id: string
           referral_code: string | null
           referral_count: number
+          referral_verified: boolean
           referrer_user_id: string | null
           updated_at: string
           user_id: string
@@ -156,6 +157,7 @@ export type Database = {
           id?: string
           referral_code?: string | null
           referral_count?: number
+          referral_verified?: boolean
           referrer_user_id?: string | null
           updated_at?: string
           user_id: string
@@ -167,6 +169,7 @@ export type Database = {
           id?: string
           referral_code?: string | null
           referral_count?: number
+          referral_verified?: boolean
           referrer_user_id?: string | null
           updated_at?: string
           user_id?: string
