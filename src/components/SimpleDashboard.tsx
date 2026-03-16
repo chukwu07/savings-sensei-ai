@@ -17,7 +17,7 @@ import { SwipeableCard } from "@/components/enhanced/SwipeableCard";
 import { AchievementBadge } from "@/components/enhanced/AchievementBadge";
 import { useSmartAlerts } from "@/hooks/useSmartAlerts";
 import { useAchievements } from "@/hooks/useAchievements";
-import { BudgetAlertCard } from "@/components/BudgetAlertCard";
+import { ReferralPrompt } from "@/components/ReferralPrompt";
 import { PremiumBadge } from "@/components/premium/PremiumBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
