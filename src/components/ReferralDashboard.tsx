@@ -295,7 +295,7 @@ export function ReferralDashboard() {
                     <TableCell className="text-muted-foreground">
                       {new Date(c.created_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="font-medium">{formatAmount(Number(c.commission_amount))}</TableCell>
+                    <TableCell className="font-medium">{formatCurrency(Number(c.commission_amount))}</TableCell>
                     <TableCell>
                       <Badge variant={c.status === "paid" ? "default" : "secondary"}>
                         {c.status}
