@@ -201,7 +201,7 @@ export function More() {
                   </div>
                 </EnhancedCard>
               </Button>
-          </div>
+            </div>
 
           <TabsList className="hidden">
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
