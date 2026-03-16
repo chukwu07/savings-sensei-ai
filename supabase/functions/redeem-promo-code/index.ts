@@ -139,6 +139,11 @@ serve(async (req) => {
 
     // Set referrer_user_id on the redeemer's profile if promo code has an owner
     if (promoCode.referrer_user_id) {
+      // Anti-fraud: block self-referral
+      if (promoCode.referrer_user_id === user.id) {
+        logStep("Self-referral blocked", { userId: user.id });
+        throw new Error("You cannot use your own referral code");
+      }
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ referrer_user_id: promoCode.referrer_user_id })

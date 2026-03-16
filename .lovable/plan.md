@@ -1,57 +1,56 @@
 
 
-# Anti-Fraud Protections for Referral System
+# Why Budget and Goals Pages Still Show Old Items First
 
-## Current Status
+## Root Cause
 
-Checking the existing code, **none of these protections are implemented yet**:
+The previous fix only updated **two** places:
+1. `src/services/offlineStorage.ts` — the offline storage layer (used by `useOfflineBudgets` / `useOfflineSavingsGoals`)
+2. `src/hooks/useSavingsGoals.ts` — the online Supabase hook for goals (this **was** fixed)
 
-1. **`redeem-promo-code/index.ts`** — no check for `referrer_user_id === user.id`
-2. **`stripe-webhook/index.ts`** — no check for `referrer === referred` before logging commission
-3. **Database** — no `CHECK` constraint preventing self-referral on `profiles`
+But the **Budget page** (`BudgetManagement.tsx`) uses the **online** hook `useBudgets`, and that hook still sorts by `category` alphabetically — not by `created_at` descending. That's why new budgets appear wherever their category falls alphabetically, not at the top.
 
-The `stripe_invoice_id UNIQUE` deduplication and `user_id UNIQUE` on redemptions are already in place.
+For **Goals**, the online hook (`useSavingsGoals`) was correctly updated to `.order('created_at', { ascending: false })`. If goals still appear at the bottom, the component itself may be re-sorting or the local state update after `addGoal` appends to the end of the array before the refetch completes. I'll check and fix that too.
 
-## Changes Required
+## Fix
 
-### 1. Database migration — add self-referral constraint on `profiles`
+### 1. `src/hooks/useBudgets.ts` (line 70)
 
-```sql
-ALTER TABLE profiles
-ADD CONSTRAINT no_self_referral
-CHECK (referrer_user_id IS NULL OR referrer_user_id <> user_id);
+Change the Supabase query sort from:
+```ts
+.order('category')
+```
+to:
+```ts
+.order('created_at', { ascending: false })
 ```
 
-This is a database-level safety net — even if code fails, the DB blocks self-referrals.
+This ensures newly created budgets appear at the top.
 
-### 2. `supabase/functions/redeem-promo-code/index.ts` — add self-referral check
+### 2. `src/hooks/useSavingsGoals.ts` (line ~60, `addGoal` function)
 
-Before setting `referrer_user_id` on the profile (around line 140), add:
-
-```typescript
-if (promoCode.referrer_user_id === user.id) {
-  throw new Error("You cannot use your own referral code");
-}
+The `addGoal` function currently appends new data to the end of the state array:
+```ts
+setGoals(prev => [...prev, data]);
 ```
 
-### 3. `supabase/functions/stripe-webhook/index.ts` — add self-referral guard in commission logic
-
-After looking up `referrer_user_id` (around line 346), add:
-
-```typescript
-if (profile.referrer_user_id === subscriber.user_id) {
-  logStep('Skipping self-referral commission');
-  // skip — do not insert commission
-}
+Change to prepend:
+```ts
+setGoals(prev => [data, ...prev]);
 ```
 
-### Files to modify
+This ensures the new goal appears at the top immediately, without waiting for a refetch.
+
+### 3. `src/hooks/useBudgets.ts` (~line 100, `addBudget` function)
+
+Same issue — check if it appends and fix to prepend.
+
+---
+
+## Files Modified
 
 | File | Change |
 |------|--------|
-| SQL migration | Add `no_self_referral` CHECK constraint |
-| `supabase/functions/redeem-promo-code/index.ts` | Block self-referral codes |
-| `supabase/functions/stripe-webhook/index.ts` | Skip commission when referrer === referred |
-
-Three small, targeted changes. No new files needed.
+| `src/hooks/useBudgets.ts` | Sort by `created_at` descending; prepend new items in state |
+| `src/hooks/useSavingsGoals.ts` | Prepend new items in state instead of appending |
 
