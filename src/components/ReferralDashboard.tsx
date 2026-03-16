@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, Share2, Gift, Trophy, Users, TrendingUp, Check, Crown } from "lucide-react";
+import { Copy, Share2, Gift, Trophy, Users, TrendingUp, Check, Crown, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,7 +70,7 @@ export function ReferralDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, created_at")
+        .select("display_name, created_at, referral_verified")
         .eq("referrer_user_id", user!.id);
       if (error) throw error;
       return data;
@@ -257,6 +257,7 @@ export function ReferralDashboard() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -265,6 +266,15 @@ export function ReferralDashboard() {
                     <TableCell>{u.display_name || "User"}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(u.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {u.referral_verified ? (
+                        <Badge variant="default" className="gap-1">
+                          <ShieldCheck className="h-3 w-3" /> Verified
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Pending</Badge>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
