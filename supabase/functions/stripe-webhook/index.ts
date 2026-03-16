@@ -343,7 +343,7 @@ Deno.serve(async (req) => {
                 .eq('user_id', subscriber.user_id)
                 .maybeSingle();
 
-              if (profile?.referrer_user_id) {
+              if (profile?.referrer_user_id && profile.referrer_user_id !== subscriber.user_id) {
                 // Find the promo code that links them (for commission %)
                 const { data: redemption } = await supabase
                   .from('promo_code_redemptions')

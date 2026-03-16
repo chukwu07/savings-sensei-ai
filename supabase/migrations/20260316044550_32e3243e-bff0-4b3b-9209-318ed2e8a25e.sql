@@ -1,0 +1,1 @@
+ALTER TABLE profiles ADD CONSTRAINT no_self_referral CHECK (referrer_user_id IS NULL OR referrer_user_id <> user_id);
