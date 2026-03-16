@@ -188,7 +188,19 @@ export function More() {
                   </div>
                 </EnhancedCard>
               </Button>
-            </div>
+
+              <Button
+                variant={currentTab === "referrals" ? "default" : "ghost"}
+                className="flex-shrink-0 md:flex-shrink md:flex-1 h-auto p-2"
+                onClick={() => setCurrentTab("referrals")}
+              >
+                <EnhancedCard className="p-3 min-w-[120px]">
+                  <div className="flex flex-col items-center gap-2">
+                    <Gift className="h-5 w-5" />
+                    <span className="text-xs font-medium text-center">Referrals</span>
+                  </div>
+                </EnhancedCard>
+              </Button>
           </div>
 
           <TabsList className="hidden">
