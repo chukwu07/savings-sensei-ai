@@ -1,72 +1,56 @@
 
 
-# Referral Dashboard + Leaderboard + Anti-Pop-up Fix
+# Why Budget and Goals Pages Still Show Old Items First
 
-## Two tasks in one implementation.
+## Root Cause
 
----
+The previous fix only updated **two** places:
+1. `src/services/offlineStorage.ts` — the offline storage layer (used by `useOfflineBudgets` / `useOfflineSavingsGoals`)
+2. `src/hooks/useSavingsGoals.ts` — the online Supabase hook for goals (this **was** fixed)
 
-## Task 1: Stop the pop-up notifications
+But the **Budget page** (`BudgetManagement.tsx`) uses the **online** hook `useBudgets`, and that hook still sorts by `category` alphabetically — not by `created_at` descending. That's why new budgets appear wherever their category falls alphabetically, not at the top.
 
-The `useSmartAlerts` hook (line 140-147) fires toast notifications every time critical budget alerts are detected. This runs on every render cycle of the dashboard, causing repeated pop-ups.
+For **Goals**, the online hook (`useSavingsGoals`) was correctly updated to `.order('created_at', { ascending: false })`. If goals still appear at the bottom, the component itself may be re-sorting or the local state update after `addGoal` appends to the end of the array before the refetch completes. I'll check and fix that too.
 
-**Fix**: Remove the automatic toast firing from `useSmartAlerts.ts`. The alerts are already displayed visually in the dashboard via `BudgetAlertCard` and `SmartAlert` components — the toasts are redundant and disruptive.
+## Fix
 
-**File**: `src/hooks/useSmartAlerts.ts` — remove lines 140-147 (the toast block inside `generateBudgetAlerts`).
+### 1. `src/hooks/useBudgets.ts` (line 70)
 
----
-
-## Task 2: Referral Dashboard + Leaderboard
-
-### Database Migration
-
-1. **`referral_rewards` table** — admin-configurable milestone rewards
-   - `id`, `referral_threshold` (int), `reward_description` (text), `reward_days` (int), `is_active` (bool), `created_at`
-   - RLS: Admin-only CRUD via `has_role`
-
-2. **`get_referral_leaderboard()` function** — `SECURITY DEFINER` function returning top 10 referrers with display_name and total earnings, bypassing RLS safely
-
-### Frontend
-
-**New file: `src/components/ReferralDashboard.tsx`**
-
-Sections:
-1. **Your Referral Link** — display code, copy button, share buttons (WhatsApp, Twitter/X, Email, native Web Share API)
-2. **Progress bar** — "X / Y referrals — next reward: Z" using `profiles.referral_count` checked against `referral_rewards`
-3. **Stats cards** — total referrals, paying users, pending earnings, total earned (from `profiles` + `referral_commissions`)
-4. **Referral list** — users referred by current user (query `profiles WHERE referrer_user_id = auth.uid()` — requires adding an RLS policy for this specific case)
-5. **Commission history** — table from `referral_commissions` (RLS already allows referrers to view own)
-6. **Leaderboard** — top 10 via `get_referral_leaderboard()` RPC, highlight current user's rank
-
-### RLS Addition
-
-Need a new SELECT policy on `profiles` so users can see the `display_name` and `created_at` of users they referred:
-
-```sql
-CREATE POLICY "Referrers can view referred users"
-ON profiles FOR SELECT TO authenticated
-USING (referrer_user_id = auth.uid());
+Change the Supabase query sort from:
+```ts
+.order('category')
+```
+to:
+```ts
+.order('created_at', { ascending: false })
 ```
 
-### Integration
+This ensures newly created budgets appear at the top.
 
-**Update: `src/components/More.tsx`** — add a "Referrals" tab button (with a gift/users icon) to the tab bar, and a corresponding `TabsContent` rendering `<ReferralDashboard />`.
+### 2. `src/hooks/useSavingsGoals.ts` (line ~60, `addGoal` function)
 
-### Share Templates
+The `addGoal` function currently appends new data to the end of the state array:
+```ts
+setGoals(prev => [...prev, data]);
+```
 
-Pre-built messages for each platform:
-- WhatsApp/Telegram: "I'm using BudgetBuddy AI to manage my money. Try it free: https://budgetbuddyai.co.uk/?ref={CODE}"
-- Twitter/X: "Managing my finances with @BudgetBuddyAI 💰 Join me: https://budgetbuddyai.co.uk/?ref={CODE}"
-- Email: subject + body with referral link
+Change to prepend:
+```ts
+setGoals(prev => [data, ...prev]);
+```
+
+This ensures the new goal appears at the top immediately, without waiting for a refetch.
+
+### 3. `src/hooks/useBudgets.ts` (~line 100, `addBudget` function)
+
+Same issue — check if it appends and fix to prepend.
 
 ---
 
-## Files Summary
+## Files Modified
 
-| File | Action |
+| File | Change |
 |------|--------|
-| SQL migration | Create `referral_rewards` table, `get_referral_leaderboard()` function, referrer SELECT policy on profiles |
-| `src/hooks/useSmartAlerts.ts` | Remove auto-toast for critical alerts |
-| `src/components/ReferralDashboard.tsx` | New — full referral dashboard |
-| `src/components/More.tsx` | Add "Referrals" tab |
+| `src/hooks/useBudgets.ts` | Sort by `created_at` descending; prepend new items in state |
+| `src/hooks/useSavingsGoals.ts` | Prepend new items in state instead of appending |
 

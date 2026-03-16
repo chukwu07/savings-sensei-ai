@@ -378,6 +378,33 @@ export type Database = {
           },
         ]
       }
+      referral_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          referral_threshold: number
+          reward_days: number | null
+          reward_description: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          referral_threshold: number
+          reward_days?: number | null
+          reward_description: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          referral_threshold?: number
+          reward_days?: number | null
+          reward_description?: string
+        }
+        Relationships: []
+      }
       savings_goals: {
         Row: {
           created_at: string
@@ -587,6 +614,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_referral_leaderboard: {
+        Args: never
+        Returns: {
+          display_name: string
+          rank: number
+          total_earnings: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

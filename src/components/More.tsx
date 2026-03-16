@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield, X } from "lucide-react";
+import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield, X, Gift } from "lucide-react";
 import { Notifications } from "./Notifications";
 import { AIChat } from "./AIChat";
 import { CurrencySelector } from "./CurrencySelector";
@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProfileSettings } from "./ProfileSettings";
 import { useQuery } from "@tanstack/react-query";
 import { AdminPanel } from "./AdminPanel";
+import { ReferralDashboard } from "./ReferralDashboard";
 
 export function More() {
   const [isLoading, setIsLoading] = useState(false);
@@ -187,6 +188,19 @@ export function More() {
                   </div>
                 </EnhancedCard>
               </Button>
+
+              <Button
+                variant={currentTab === "referrals" ? "default" : "ghost"}
+                className="flex-shrink-0 md:flex-shrink md:flex-1 h-auto p-2"
+                onClick={() => setCurrentTab("referrals")}
+              >
+                <EnhancedCard className="p-3 min-w-[120px]">
+                  <div className="flex flex-col items-center gap-2">
+                    <Gift className="h-5 w-5" />
+                    <span className="text-xs font-medium text-center">Referrals</span>
+                  </div>
+                </EnhancedCard>
+              </Button>
             </div>
           </div>
 
@@ -195,6 +209,7 @@ export function More() {
             <TabsTrigger value="ai">AI Chat</TabsTrigger>
             <TabsTrigger value="premium">Premium</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="notifications">
@@ -404,6 +419,10 @@ export function More() {
                 </div>
               </div>
             </EnhancedCard>
+          </TabsContent>
+
+          <TabsContent value="referrals">
+            <ReferralDashboard />
           </TabsContent>
         </Tabs>
       </div>
