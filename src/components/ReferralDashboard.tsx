@@ -257,6 +257,7 @@ export function ReferralDashboard() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -265,6 +266,15 @@ export function ReferralDashboard() {
                     <TableCell>{u.display_name || "User"}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(u.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {u.referral_verified ? (
+                        <Badge variant="default" className="gap-1">
+                          <ShieldCheck className="h-3 w-3" /> Verified
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Pending</Badge>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
