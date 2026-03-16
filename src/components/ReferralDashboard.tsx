@@ -120,24 +120,27 @@ export function ReferralDashboard() {
           text: `I'm using BudgetBuddy AI to manage my money. Try it free!`,
           url: referralLink,
         });
+        return;
       } catch {}
     }
+    // Fallback: copy link
+    await copyLink();
   };
 
   const shareWhatsApp = () => {
     const text = encodeURIComponent(`I'm using BudgetBuddy AI to manage my money. Try it free: ${referralLink}`);
-    window.open(`https://wa.me/?text=${text}`, "_blank");
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
   };
 
   const shareTwitter = () => {
     const text = encodeURIComponent(`Managing my finances with @BudgetBuddyAI 💰 Join me: ${referralLink}`);
-    window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank", "noopener,noreferrer");
   };
 
   const shareEmail = () => {
     const subject = encodeURIComponent("Try BudgetBuddy AI - Smart Money Management");
     const body = encodeURIComponent(`Hey!\n\nI've been using BudgetBuddy AI to track my spending and it's been really helpful.\n\nYou can try it for free here: ${referralLink}\n\nEnjoy!`);
-    window.open(`mailto:?subject=${subject}&body=${body}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -162,18 +165,16 @@ export function ReferralDashboard() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {typeof navigator.share === "function" && (
-              <Button size="sm" variant="outline" onClick={shareNative}>
-                <Share2 className="h-4 w-4 mr-1" /> Share
-              </Button>
-            )}
-            <Button size="sm" variant="outline" onClick={shareWhatsApp} className="text-green-600">
+            <Button size="sm" variant="outline" onClick={shareNative} disabled={!referralLink}>
+              <Share2 className="h-4 w-4 mr-1" /> Share
+            </Button>
+            <Button size="sm" variant="outline" onClick={shareWhatsApp} disabled={!referralLink} className="text-green-600">
               WhatsApp
             </Button>
-            <Button size="sm" variant="outline" onClick={shareTwitter}>
+            <Button size="sm" variant="outline" onClick={shareTwitter} disabled={!referralLink}>
               𝕏 Post
             </Button>
-            <Button size="sm" variant="outline" onClick={shareEmail}>
+            <Button size="sm" variant="outline" onClick={shareEmail} disabled={!referralLink}>
               Email
             </Button>
           </div>

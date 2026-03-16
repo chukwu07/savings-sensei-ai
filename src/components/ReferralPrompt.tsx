@@ -45,7 +45,7 @@ export function ReferralPrompt() {
     const text = encodeURIComponent(
       `I've been using BudgetBuddy AI to manage my money smarter — it's brilliant! Join free here: ${link}`
     );
-    window.open(`https://wa.me/?text=${text}`, "_blank");
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
   };
 
   const handleDismiss = () => {

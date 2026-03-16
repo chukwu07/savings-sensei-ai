@@ -1,32 +1,56 @@
 
 
-# Fix Referral Share Buttons
+# Why Budget and Goals Pages Still Show Old Items First
 
-## Root Causes
+## Root Cause
 
-1. **Empty referral link in share URLs**: The profile query returns data, but if it hasn't loaded yet (or fails in preview), `referralLink` is empty. All share URLs then contain no link. The buttons aren't disabled while loading.
+The previous fix only updated **two** places:
+1. `src/services/offlineStorage.ts` — the offline storage layer (used by `useOfflineBudgets` / `useOfflineSavingsGoals`)
+2. `src/hooks/useSavingsGoals.ts` — the online Supabase hook for goals (this **was** fixed)
 
-2. **WhatsApp "blocked" page**: `wa.me` redirects to `api.whatsapp.com` which blocks iframe embedding. This only happens in the Lovable preview — it works on the published site. No code fix needed, but we can improve the UX.
+But the **Budget page** (`BudgetManagement.tsx`) uses the **online** hook `useBudgets`, and that hook still sorts by `category` alphabetically — not by `created_at` descending. That's why new budgets appear wherever their category falls alphabetically, not at the top.
 
-3. **Share button does nothing**: `navigator.share` API is not available inside iframes (preview). On the published site or mobile, it works. We should add a fallback.
+For **Goals**, the online hook (`useSavingsGoals`) was correctly updated to `.order('created_at', { ascending: false })`. If goals still appear at the bottom, the component itself may be re-sorting or the local state update after `addGoal` appends to the end of the array before the refetch completes. I'll check and fix that too.
 
-## Fixes
+## Fix
 
-### File: `src/components/ReferralDashboard.tsx`
+### 1. `src/hooks/useBudgets.ts` (line 70)
 
-1. **Guard all share buttons** — disable them when `referralLink` is empty (profile still loading)
-2. **Add fallback for native Share** — if `navigator.share` is unavailable, fall back to copying the link
-3. **Use `window.open` with `noopener`** for WhatsApp/Twitter/Email to improve cross-browser behavior
-4. **Email: use `window.location.href` instead of `window.open`** for mailto links — `window.open` creates a blank tab on many browsers
+Change the Supabase query sort from:
+```ts
+.order('category')
+```
+to:
+```ts
+.order('created_at', { ascending: false })
+```
 
-### File: `src/components/ReferralPrompt.tsx`
+This ensures newly created budgets appear at the top.
 
-Same email/WhatsApp pattern — apply consistent fixes.
+### 2. `src/hooks/useSavingsGoals.ts` (line ~60, `addGoal` function)
 
-## Changes
+The `addGoal` function currently appends new data to the end of the state array:
+```ts
+setGoals(prev => [...prev, data]);
+```
+
+Change to prepend:
+```ts
+setGoals(prev => [data, ...prev]);
+```
+
+This ensures the new goal appears at the top immediately, without waiting for a refetch.
+
+### 3. `src/hooks/useBudgets.ts` (~line 100, `addBudget` function)
+
+Same issue — check if it appends and fix to prepend.
+
+---
+
+## Files Modified
 
 | File | Change |
 |------|--------|
-| `src/components/ReferralDashboard.tsx` | Disable share buttons when no referral link; fix mailto to use `location.href`; add Share fallback |
-| `src/components/ReferralPrompt.tsx` | Same fixes for consistency |
+| `src/hooks/useBudgets.ts` | Sort by `created_at` descending; prepend new items in state |
+| `src/hooks/useSavingsGoals.ts` | Prepend new items in state instead of appending |
 
