@@ -344,7 +344,7 @@ export function ReferralDashboard() {
                         {isMe && <Badge variant="outline" className="ml-2 text-xs">You</Badge>}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatAmount(Number(entry.total_earnings))}
+                        {formatCurrency(Number(entry.total_earnings))}
                       </TableCell>
                     </TableRow>
                   );
