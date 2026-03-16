@@ -448,8 +448,8 @@ export function SimpleDashboard() {
         </div>
       </EnhancedCard>
 
-      {/* Budget Alert Card - Only for Home Screen */}
-      <BudgetAlertCard />
+      {/* Smart Referral Prompt — after good health score */}
+      {healthStatus.variant === 'success' && <ReferralPrompt />}
 
       {/* Recent Achievements */}
       {recentAchievements.length > 0 && (
