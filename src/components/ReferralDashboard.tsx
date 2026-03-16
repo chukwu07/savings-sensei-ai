@@ -239,7 +239,7 @@ export function ReferralDashboard() {
         <Card>
           <CardContent className="p-4 text-center">
             <TrendingUp className="h-5 w-5 mx-auto mb-1 text-primary" />
-            <p className="text-2xl font-bold">{formatAmount(totalEarnings)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(totalEarnings)}</p>
             <p className="text-xs text-muted-foreground">Total Earned</p>
           </CardContent>
         </Card>
