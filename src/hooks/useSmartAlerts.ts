@@ -137,14 +137,6 @@ export function useSmartAlerts() {
 
         newAlerts.push(fullAlert);
 
-        // Real-time toast for critical alerts
-        if (realTimeMonitoring && alert.level === 'critical' && !alerts.find(a => a.id === fullAlert.id)) {
-          toast({
-            title: alert.title,
-            description: alert.message,
-            variant: "destructive",
-          });
-        }
       }
     });
 
