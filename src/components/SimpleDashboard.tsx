@@ -544,6 +544,9 @@ export function SimpleDashboard() {
           <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary/5 to-transparent rounded-full transform translate-x-10 -translate-y-10" />
         </EnhancedCard>
       )}
+
+      {/* Smart Referral Prompt — after AI insights */}
+      {aiInsights.length > 0 && <ReferralPrompt />}
     </div>
   );
 } 
