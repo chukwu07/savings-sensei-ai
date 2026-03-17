@@ -614,7 +614,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      referrer_commissions_safe: {
+        Row: {
+          commission_amount: number | null
+          commission_percent: number | null
+          created_at: string | null
+          id: string | null
+          referred_user_id: string | null
+          referrer_user_id: string | null
+          status: string | null
+        }
+        Insert: {
+          commission_amount?: number | null
+          commission_percent?: number | null
+          created_at?: string | null
+          id?: string | null
+          referred_user_id?: string | null
+          referrer_user_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          commission_amount?: number | null
+          commission_percent?: number | null
+          created_at?: string | null
+          id?: string | null
+          referred_user_id?: string | null
+          referrer_user_id?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_referral_code: { Args: { uid: string }; Returns: string }
