@@ -59,7 +59,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       });
       
       if (error) {
-        console.error('Subscription check failed:', error);
+        if (import.meta.env.DEV) console.error('Subscription check failed:', error);
         setSubscribed(false);
         setSubscriptionTier(null);
         setSubscriptionEnd(null);
