@@ -133,6 +133,11 @@ const App = () => (
                         <TermsOfService />
                       </Suspense>
                     } />
+                    <Route path="/reset-password" element={
+                      <Suspense fallback={<LoadingFallback />}>
+                        <Auth />
+                      </Suspense>
+                    } />
                     <Route path="/*" element={<AppContent />} />
                   </Routes>
                 </BrowserRouter>
