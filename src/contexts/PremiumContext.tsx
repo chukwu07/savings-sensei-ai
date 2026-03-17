@@ -93,7 +93,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       });
       
       if (error) {
-        console.error('Error creating checkout:', error);
+        if (import.meta.env.DEV) console.error('Error creating checkout:', error);
         return;
       }
 
