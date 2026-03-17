@@ -7,7 +7,7 @@ export class SyncService {
 
   static async performFullSync(userId: string, toast?: any) {
     if (this.isRunning) {
-      console.log('Sync already in progress');
+      if (import.meta.env.DEV) console.log('Sync already in progress');
       return;
     }
 
