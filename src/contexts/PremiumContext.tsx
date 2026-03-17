@@ -72,7 +72,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       setSubscriptionEnd(data.subscription_end || null);
       setCancelAtPeriodEnd(data.cancel_at_period_end || false);
     } catch (error) {
-      console.error('Subscription check error:', error);
+      if (import.meta.env.DEV) console.error('Subscription check error:', error);
       setSubscribed(false);
       setSubscriptionTier(null);
       setSubscriptionEnd(null);
