@@ -57,11 +57,11 @@ export function More() {
         });
 
         if (error) {
-          console.error("Admin check error:", error);
+          if (import.meta.env.DEV) console.error("Admin check error:", error);
           return false;
         }
         
-        console.log("Admin check result:", data);
+        if (import.meta.env.DEV) console.log("Admin check completed");
         return data === true;
       } catch (error) {
         console.error("Admin check exception:", error);
