@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('🔐 Auth state change:', event, session?.user?.email || 'no user');
+        if (import.meta.env.DEV) console.log('Auth state change:', event, session?.user ? 'authenticated' : 'anonymous');
         
         // Log authentication events for security monitoring
         securityLogger.logAuthEvent(
