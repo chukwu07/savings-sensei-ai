@@ -48,7 +48,7 @@ export function BudgetAlertSystem() {
         description: `Successfully sent ${data.alertsSent || 0} budget alert(s) to users who need them.`,
       });
     } catch (error) {
-      console.error('Error sending budget alerts:', error);
+      if (import.meta.env.DEV) console.error('Error sending budget alerts:', error);
       toast({
         title: "Failed to Send Alerts",
         description: "There was an error sending budget alerts. Please try again.",

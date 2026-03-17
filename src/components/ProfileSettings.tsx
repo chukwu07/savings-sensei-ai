@@ -94,7 +94,7 @@ export function ProfileSettings() {
         description: "Your name has been updated successfully!",
       });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      if (import.meta.env.DEV) console.error('Error updating profile:', error);
       toast({
         title: "Update Failed",
         description: "Failed to update your profile. Please try again.",

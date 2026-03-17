@@ -118,7 +118,7 @@ export function OfflineTransactions() {
           : "Transaction saved offline - will sync when back online",
       });
     } catch (error) {
-      console.error('Add transaction error:', error);
+      if (import.meta.env.DEV) console.error('Add transaction error:', error);
     }
   };
 

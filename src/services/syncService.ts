@@ -148,7 +148,7 @@ export class SyncService {
           await OfflineStorageService.removeSyncQueueItem(queueItem.id);
         }
       } catch (error) {
-        console.error(`Failed to sync ${queueItem.operation} on ${queueItem.table}:`, error);
+        if (import.meta.env.DEV) console.error(`Failed to sync ${queueItem.operation} on ${queueItem.table}:`, error);
         // Keep in queue for retry
       }
     }

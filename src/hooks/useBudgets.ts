@@ -201,7 +201,7 @@ export function useBudgets() {
       const percentUsed = Math.round((budget.spent / budget.allocated) * 100);
       // Only send if not already alerted and user email exists
       if (percentUsed >= 80 && !alertedBudgets[budget.id]) {
-        console.log(`Budget alert triggered for ${budget.category}: ${percentUsed}% used`);
+        if (import.meta.env.DEV) console.log(`Budget alert triggered for ${budget.category}`);
         sendBudgetAlertEmail(
           user.email,
           budget.allocated,
