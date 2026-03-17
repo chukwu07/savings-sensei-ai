@@ -20,7 +20,7 @@ export function ReferralDashboard() {
   const [copied, setCopied] = useState(false);
 
   // Fetch profile (referral_code, referral_count)
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["referral-profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -29,6 +29,13 @@ export function ReferralDashboard() {
         .eq("user_id", user!.id)
         .single();
       if (error) throw error;
+
+      // If no referral code exists, generate one via RPC
+      if (!data.referral_code) {
+        const { data: code, error: rpcError } = await supabase.rpc("generate_referral_code", { uid: user!.id });
+        if (rpcError) throw rpcError;
+        return { ...data, referral_code: code };
+      }
       return data;
     },
     enabled: !!user?.id,
@@ -157,7 +164,7 @@ export function ReferralDashboard() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2">
             <code className="flex-1 bg-muted p-3 rounded-lg text-sm break-all font-mono">
-              {referralLink || "Loading..."}
+              {referralLink || (profileLoading ? "Loading..." : "Generating your referral code...")}
             </code>
             <Button size="icon" variant="outline" onClick={copyLink} disabled={!referralLink}>
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
