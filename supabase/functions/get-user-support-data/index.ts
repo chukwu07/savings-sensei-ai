@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
-import { EdgeSecurityLogger } from '../_shared/securityUtils.ts';
+import { EdgeSecurityLogger, createSecureErrorResponse } from '../_shared/securityUtils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
