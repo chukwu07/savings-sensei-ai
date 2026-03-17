@@ -15,6 +15,7 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Signing you in...");
   const [preFilledEmail, setPreFilledEmail] = useState("");
   const [preFilledPassword, setPreFilledPassword] = useState("");
