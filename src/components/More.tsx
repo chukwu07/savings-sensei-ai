@@ -64,7 +64,7 @@ export function More() {
         if (import.meta.env.DEV) console.log("Admin check completed");
         return data === true;
       } catch (error) {
-        console.error("Admin check exception:", error);
+        if (import.meta.env.DEV) console.error("Admin check exception:", error);
         return false;
       }
     },
