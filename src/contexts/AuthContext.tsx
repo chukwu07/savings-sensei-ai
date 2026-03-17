@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (import.meta.env.DEV) console.log('Sign out successful');
       return { error: null };
     } catch (error) {
-      console.error('❌ Sign out failed:', error);
+      if (import.meta.env.DEV) console.error('Sign out failed:', error);
       // Ensure state is cleared even if API call fails
       setUser(null);
       setSession(null);

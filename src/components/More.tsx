@@ -111,10 +111,10 @@ export function More() {
     try {
       const { error } = await signOut();
       if (error) {
-        console.error('Sign out error:', error);
+        if (import.meta.env.DEV) console.error('Sign out error:', error);
       }
     } catch (error) {
-      console.error('Unexpected sign out error:', error);
+      if (import.meta.env.DEV) console.error('Unexpected sign out error:', error);
     } finally {
       setIsSigningOut(false);
     }

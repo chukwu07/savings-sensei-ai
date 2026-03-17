@@ -194,7 +194,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
 
       await checkSubscription();
     } catch (error) {
-      console.error('Error reactivating subscription:', error);
+      if (import.meta.env.DEV) console.error('Error reactivating subscription:', error);
       throw error;
     }
   };
