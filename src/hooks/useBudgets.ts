@@ -46,11 +46,11 @@ export function useBudgets() {
     ).then(
       (result) => {
         setEmailStatus({ success: true, message: 'Budget alert email sent successfully!' });
-        console.log('Email sent:', result.text);
+        if (import.meta.env.DEV) console.log('Email sent:', result.text);
       },
       (error) => {
         setEmailStatus({ success: false, message: 'Failed to send budget alert email.' });
-        console.error('Email send error:', error);
+        if (import.meta.env.DEV) console.error('Email send error:', error);
       }
     );
   };
@@ -201,7 +201,7 @@ export function useBudgets() {
       const percentUsed = Math.round((budget.spent / budget.allocated) * 100);
       // Only send if not already alerted and user email exists
       if (percentUsed >= 80 && !alertedBudgets[budget.id]) {
-        console.log(`Budget alert triggered for ${budget.category}: ${percentUsed}% used`);
+        if (import.meta.env.DEV) console.log(`Budget alert triggered for ${budget.category}`);
         sendBudgetAlertEmail(
           user.email,
           budget.allocated,

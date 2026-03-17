@@ -35,7 +35,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) =>
           setIsOnline(status.connected);
           setConnectionType(status.connectionType);
         } catch (error) {
-          console.log('Network status not available, defaulting to online');
+          if (import.meta.env.DEV) console.log('Network status not available, defaulting to online');
           setIsOnline(true);
         }
       } else {

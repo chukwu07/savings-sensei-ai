@@ -7,7 +7,7 @@ export class SyncService {
 
   static async performFullSync(userId: string, toast?: any) {
     if (this.isRunning) {
-      console.log('Sync already in progress');
+      if (import.meta.env.DEV) console.log('Sync already in progress');
       return;
     }
 
@@ -20,7 +20,7 @@ export class SyncService {
       // Then sync local changes to server (push)
       await this.pushToServer(userId);
     } catch (error) {
-      console.error('Sync failed:', error);
+      if (import.meta.env.DEV) console.error('Sync failed:', error);
     } finally {
       this.isRunning = false;
     }
@@ -121,7 +121,7 @@ export class SyncService {
         await OfflineStorageService.updateSyncMetadata('savings_goals');
       }
     } catch (error) {
-      console.error('Pull sync failed:', error);
+      if (import.meta.env.DEV) console.error('Pull sync failed:', error);
       throw error;
     }
   }
@@ -148,7 +148,7 @@ export class SyncService {
           await OfflineStorageService.removeSyncQueueItem(queueItem.id);
         }
       } catch (error) {
-        console.error(`Failed to sync ${queueItem.operation} on ${queueItem.table}:`, error);
+        if (import.meta.env.DEV) console.error(`Failed to sync ${queueItem.operation} on ${queueItem.table}:`, error);
         // Keep in queue for retry
       }
     }

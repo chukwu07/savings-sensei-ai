@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('🔐 Auth state change:', event, session?.user?.email || 'no user');
+        if (import.meta.env.DEV) console.log('Auth state change:', event, session?.user ? 'authenticated' : 'anonymous');
         
         // Log authentication events for security monitoring
         securityLogger.logAuthEvent(
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // THEN check for existing session with validation
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        console.error('❌ Session validation error:', error);
+        if (import.meta.env.DEV) console.error('Session validation error:', error);
         setSession(null);
         setUser(null);
         setLoading(false);
@@ -66,11 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Only restore if we have a valid, non-expired session
       if (session && session.expires_at && new Date(session.expires_at * 1000) > new Date()) {
-        console.log('✅ Valid session found, restoring user');
+        if (import.meta.env.DEV) console.log('Valid session found');
         setSession(session);
         setUser(session.user);
       } else {
-        console.log('❌ Invalid or expired session, clearing state');
+        if (import.meta.env.DEV) console.log('Invalid or expired session, clearing state');
         setSession(null);
         setUser(null);
       }
@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    console.log('🔐 Starting sign out process...');
+    if (import.meta.env.DEV) console.log('Starting sign out process...');
     try {
       // Clear local state immediately
       setUser(null);
@@ -165,14 +165,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('supabase.auth.token');
       
       if (error) {
-        console.error('❌ Sign out error:', error);
+        if (import.meta.env.DEV) console.error('Sign out error:', error);
         return { error };
       }
       
-      console.log('✅ Sign out successful - localStorage cleared');
+      if (import.meta.env.DEV) console.log('Sign out successful');
       return { error: null };
     } catch (error) {
-      console.error('❌ Sign out failed:', error);
+      if (import.meta.env.DEV) console.error('Sign out failed:', error);
       // Ensure state is cleared even if API call fails
       setUser(null);
       setSession(null);

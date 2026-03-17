@@ -57,14 +57,14 @@ export function More() {
         });
 
         if (error) {
-          console.error("Admin check error:", error);
+          if (import.meta.env.DEV) console.error("Admin check error:", error);
           return false;
         }
         
-        console.log("Admin check result:", data);
+        if (import.meta.env.DEV) console.log("Admin check completed");
         return data === true;
       } catch (error) {
-        console.error("Admin check exception:", error);
+        if (import.meta.env.DEV) console.error("Admin check exception:", error);
         return false;
       }
     },
@@ -95,7 +95,7 @@ export function More() {
         description: `Successfully processed budget alerts. ${data.alertsSent} alerts were sent.`
       });
     } catch (error) {
-      console.error('Error sending budget alerts:', error);
+      if (import.meta.env.DEV) console.error('Error sending budget alerts:', error);
       toast({
         title: "Error",
         description: "Failed to send budget alerts. Please try again.",
@@ -111,10 +111,10 @@ export function More() {
     try {
       const { error } = await signOut();
       if (error) {
-        console.error('Sign out error:', error);
+        if (import.meta.env.DEV) console.error('Sign out error:', error);
       }
     } catch (error) {
-      console.error('Unexpected sign out error:', error);
+      if (import.meta.env.DEV) console.error('Unexpected sign out error:', error);
     } finally {
       setIsSigningOut(false);
     }

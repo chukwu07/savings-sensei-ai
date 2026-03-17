@@ -2,7 +2,7 @@ import { SavingsGoals } from "@/components/SavingsGoals";
 import { PremiumBadge } from "@/components/premium/PremiumBadge";
 
 export default function Goals() {
-  console.log('Goals component loading');
+  if (import.meta.env.DEV) console.log('Goals component loading');
   return (
     <div>
       {/* Premium Badge - Visible at top */}

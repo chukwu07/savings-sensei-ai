@@ -24,13 +24,14 @@ export function Dashboard() {
   const { budgets, loading: budgetsLoading } = useBudgets();
   const { goals, loading: goalsLoading } = useSavingsGoals();
 
-  // Add debug logging
-  console.log('Dashboard render:', { 
-    transactionsCount: transactions?.length, 
-    budgetsCount: budgets?.length, 
-    goalsCount: goals?.length,
-    loading: transactionsLoading || budgetsLoading || goalsLoading
-  });
+  // Debug logging (dev only)
+  if (import.meta.env.DEV) {
+    console.log('Dashboard render:', { 
+      transactionsCount: transactions?.length, 
+      budgetsCount: budgets?.length, 
+      goalsCount: goals?.length,
+    });
+  }
 
   const loading = transactionsLoading || budgetsLoading || goalsLoading;
 

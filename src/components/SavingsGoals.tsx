@@ -17,7 +17,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
 import { savingsGoalSchema, formatZodError } from "@/lib/validation-schemas";
 export function SavingsGoals() {
-  console.log('SavingsGoals component loading');
+  if (import.meta.env.DEV) console.log('SavingsGoals component loading');
   const [newGoal, setNewGoal] = useState({
     name: "",
     target: "",

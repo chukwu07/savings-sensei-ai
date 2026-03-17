@@ -59,7 +59,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       });
       
       if (error) {
-        console.error('Subscription check failed:', error);
+        if (import.meta.env.DEV) console.error('Subscription check failed:', error);
         setSubscribed(false);
         setSubscriptionTier(null);
         setSubscriptionEnd(null);
@@ -72,7 +72,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       setSubscriptionEnd(data.subscription_end || null);
       setCancelAtPeriodEnd(data.cancel_at_period_end || false);
     } catch (error) {
-      console.error('Subscription check error:', error);
+      if (import.meta.env.DEV) console.error('Subscription check error:', error);
       setSubscribed(false);
       setSubscriptionTier(null);
       setSubscriptionEnd(null);
@@ -93,7 +93,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       });
       
       if (error) {
-        console.error('Error creating checkout:', error);
+        if (import.meta.env.DEV) console.error('Error creating checkout:', error);
         return;
       }
 
@@ -101,7 +101,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         window.open(data.url, '_blank');
       }
     } catch (error) {
-      console.error('Error in createCheckout:', error);
+      if (import.meta.env.DEV) console.error('Error in createCheckout:', error);
     }
   };
 
@@ -115,7 +115,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       });
       
       if (error) {
-        console.error('Error opening customer portal:', error);
+        if (import.meta.env.DEV) console.error('Error opening customer portal:', error);
         // Check if it's a "no subscription" error
         if (error.message?.includes('No active subscription') || data?.needsSubscription) {
           alert('You need to subscribe first before managing your subscription.');
@@ -129,7 +129,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         window.open(data.url, '_blank');
       }
     } catch (error) {
-      console.error('Error in openCustomerPortal:', error);
+      if (import.meta.env.DEV) console.error('Error in openCustomerPortal:', error);
       alert('Unable to open subscription management. Please try again later.');
     }
   };
@@ -163,7 +163,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       // Refresh subscription status (webhook will update database)
       await checkSubscription();
     } catch (error) {
-      console.error('Error canceling subscription:', error);
+      if (import.meta.env.DEV) console.error('Error canceling subscription:', error);
       throw error;
     }
   };
@@ -194,7 +194,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
 
       await checkSubscription();
     } catch (error) {
-      console.error('Error reactivating subscription:', error);
+      if (import.meta.env.DEV) console.error('Error reactivating subscription:', error);
       throw error;
     }
   };
