@@ -42,6 +42,12 @@ export default function Auth() {
 
   // Check for password recovery session
   useEffect(() => {
+    // Check URL hash for recovery token (Supabase appends type=recovery)
+    const hash = window.location.hash;
+    if (hash && (hash.includes('type=recovery') || hash.includes('type=magiclink'))) {
+      setCurrentScreen('reset-password');
+    }
+
     // Check if we're already in a recovery session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.recovery_sent_at) {
@@ -179,7 +185,7 @@ export default function Auth() {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       
       if (error) throw error;
