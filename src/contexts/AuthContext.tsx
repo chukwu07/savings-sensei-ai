@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Only restore if we have a valid, non-expired session
       if (session && session.expires_at && new Date(session.expires_at * 1000) > new Date()) {
-        console.log('✅ Valid session found, restoring user');
+        if (import.meta.env.DEV) console.log('Valid session found');
         setSession(session);
         setUser(session.user);
       } else {
