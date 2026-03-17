@@ -163,7 +163,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       // Refresh subscription status (webhook will update database)
       await checkSubscription();
     } catch (error) {
-      console.error('Error canceling subscription:', error);
+      if (import.meta.env.DEV) console.error('Error canceling subscription:', error);
       throw error;
     }
   };
