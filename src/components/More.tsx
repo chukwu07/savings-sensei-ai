@@ -95,7 +95,7 @@ export function More() {
         description: `Successfully processed budget alerts. ${data.alertsSent} alerts were sent.`
       });
     } catch (error) {
-      console.error('Error sending budget alerts:', error);
+      if (import.meta.env.DEV) console.error('Error sending budget alerts:', error);
       toast({
         title: "Error",
         description: "Failed to send budget alerts. Please try again.",
