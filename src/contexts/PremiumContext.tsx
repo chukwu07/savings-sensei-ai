@@ -115,7 +115,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       });
       
       if (error) {
-        console.error('Error opening customer portal:', error);
+        if (import.meta.env.DEV) console.error('Error opening customer portal:', error);
         // Check if it's a "no subscription" error
         if (error.message?.includes('No active subscription') || data?.needsSubscription) {
           alert('You need to subscribe first before managing your subscription.');
