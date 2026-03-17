@@ -165,11 +165,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('supabase.auth.token');
       
       if (error) {
-        console.error('❌ Sign out error:', error);
+        if (import.meta.env.DEV) console.error('Sign out error:', error);
         return { error };
       }
       
-      console.log('✅ Sign out successful - localStorage cleared');
+      if (import.meta.env.DEV) console.log('Sign out successful');
       return { error: null };
     } catch (error) {
       console.error('❌ Sign out failed:', error);
