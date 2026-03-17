@@ -197,7 +197,7 @@ export function SimpleDashboard() {
           }
         } catch (error) {
           // Silently handle error - greeting will fall back to generic
-          console.log('Profile fetch failed:', error);
+          if (import.meta.env.DEV) console.log('Profile fetch failed:', error);
         }
       };
       fetchProfile();
