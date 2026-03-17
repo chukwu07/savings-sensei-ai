@@ -101,7 +101,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         window.open(data.url, '_blank');
       }
     } catch (error) {
-      console.error('Error in createCheckout:', error);
+      if (import.meta.env.DEV) console.error('Error in createCheckout:', error);
     }
   };
 
