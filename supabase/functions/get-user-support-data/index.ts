@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0';
-import { EdgeSecurityLogger } from '../_shared/securityUtils.ts';
+import { EdgeSecurityLogger, createSecureErrorResponse } from '../_shared/securityUtils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -103,12 +103,6 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in get-user-support-data:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return createSecureErrorResponse('Failed to retrieve user support data.', 500);
   }
 });
