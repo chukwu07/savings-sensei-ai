@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session.user);
       } else {
-        console.log('❌ Invalid or expired session, clearing state');
+        if (import.meta.env.DEV) console.log('Invalid or expired session, clearing state');
         setSession(null);
         setUser(null);
       }
