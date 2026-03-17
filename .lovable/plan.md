@@ -1,56 +1,29 @@
 
 
-# Why Budget and Goals Pages Still Show Old Items First
+# Add Referral Reward Explainer to UI
 
-## Root Cause
+## Problem
+Users don't understand how they earn rewards — "Do I earn when friends sign up, use it, or pay?" This confusion reduces sharing.
 
-The previous fix only updated **two** places:
-1. `src/services/offlineStorage.ts` — the offline storage layer (used by `useOfflineBudgets` / `useOfflineSavingsGoals`)
-2. `src/hooks/useSavingsGoals.ts` — the online Supabase hook for goals (this **was** fixed)
+## Change
 
-But the **Budget page** (`BudgetManagement.tsx`) uses the **online** hook `useBudgets`, and that hook still sorts by `category` alphabetically — not by `created_at` descending. That's why new budgets appear wherever their category falls alphabetically, not at the top.
+### `src/components/ReferralDashboard.tsx`
+Update the `CardDescription` under "Your Referral Link" to clearly explain both reward paths:
 
-For **Goals**, the online hook (`useSavingsGoals`) was correctly updated to `.order('created_at', { ascending: false })`. If goals still appear at the bottom, the component itself may be re-sorting or the local state update after `addGoal` appends to the end of the array before the refetch completes. I'll check and fix that too.
+**Current:**
+> "Share your unique link and earn rewards for every friend who joins"
 
-## Fix
+**New:**
+> "Share your link and earn rewards when friends use the app (3+ transactions). Earn extra when they upgrade to Premium."
 
-### 1. `src/hooks/useBudgets.ts` (line 70)
+### `src/components/ReferralPrompt.tsx`
+Update the subtitle text similarly:
 
-Change the Supabase query sort from:
-```ts
-.order('category')
-```
-to:
-```ts
-.order('created_at', { ascending: false })
-```
+**Current:**
+> "Join thousands improving their finances with BudgetBuddy."
 
-This ensures newly created budgets appear at the top.
+**New:**
+> "Earn rewards when friends log 3 transactions. Bonus for Premium upgrades."
 
-### 2. `src/hooks/useSavingsGoals.ts` (line ~60, `addGoal` function)
-
-The `addGoal` function currently appends new data to the end of the state array:
-```ts
-setGoals(prev => [...prev, data]);
-```
-
-Change to prepend:
-```ts
-setGoals(prev => [data, ...prev]);
-```
-
-This ensures the new goal appears at the top immediately, without waiting for a refetch.
-
-### 3. `src/hooks/useBudgets.ts` (~line 100, `addBudget` function)
-
-Same issue — check if it appends and fix to prepend.
-
----
-
-## Files Modified
-
-| File | Change |
-|------|--------|
-| `src/hooks/useBudgets.ts` | Sort by `created_at` descending; prepend new items in state |
-| `src/hooks/useSavingsGoals.ts` | Prepend new items in state instead of appending |
+Two small text changes, no logic changes needed.
 
