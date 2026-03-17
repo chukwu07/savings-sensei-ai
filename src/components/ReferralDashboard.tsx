@@ -62,7 +62,7 @@ export function ReferralDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("referral_commissions")
-        .select("*")
+        .select("id, referrer_user_id, referred_user_id, commission_amount, commission_percent, status, created_at")
         .eq("referrer_user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
