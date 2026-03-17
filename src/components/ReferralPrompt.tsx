@@ -24,8 +24,14 @@ export function ReferralPrompt() {
         .select("referral_code")
         .eq("user_id", user.id)
         .single()
-        .then(({ data }) => {
-          if (data?.referral_code) setReferralCode(data.referral_code);
+        .then(async ({ data }) => {
+          if (data?.referral_code) {
+            setReferralCode(data.referral_code);
+          } else {
+            // Generate code via RPC if missing
+            const { data: code } = await supabase.rpc("generate_referral_code", { uid: user.id });
+            if (code) setReferralCode(code);
+          }
         });
     }
   }, [user?.id]);

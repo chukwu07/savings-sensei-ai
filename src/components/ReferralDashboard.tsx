@@ -164,7 +164,7 @@ export function ReferralDashboard() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2">
             <code className="flex-1 bg-muted p-3 rounded-lg text-sm break-all font-mono">
-              {referralLink || "Loading..."}
+              {referralLink || (profileLoading ? "Loading..." : "Generating your referral code...")}
             </code>
             <Button size="icon" variant="outline" onClick={copyLink} disabled={!referralLink}>
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
