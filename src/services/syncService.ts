@@ -121,7 +121,7 @@ export class SyncService {
         await OfflineStorageService.updateSyncMetadata('savings_goals');
       }
     } catch (error) {
-      console.error('Pull sync failed:', error);
+      if (import.meta.env.DEV) console.error('Pull sync failed:', error);
       throw error;
     }
   }
