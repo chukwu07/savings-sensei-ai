@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    console.log('🔐 Starting sign out process...');
+    if (import.meta.env.DEV) console.log('Starting sign out process...');
     try {
       // Clear local state immediately
       setUser(null);
