@@ -159,7 +159,7 @@ export function ReferralDashboard() {
             <Gift className="h-5 w-5 text-primary" />
             Your Referral Link
           </CardTitle>
-          <CardDescription>Share your unique link and earn rewards for every friend who joins</CardDescription>
+          <CardDescription>Share your link and earn rewards when friends use the app (3+ transactions). Earn extra when they upgrade to Premium.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2">

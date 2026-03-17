@@ -76,7 +76,7 @@ export function ReferralPrompt() {
           <div>
             <h3 className="font-semibold text-mobile-lg">Invite friends, earn Premium</h3>
             <p className="text-xs text-muted-foreground">
-              Join thousands improving their finances with BudgetBuddy.
+              Earn rewards when friends log 3 transactions. Bonus for Premium upgrades.
             </p>
           </div>
         </div>
