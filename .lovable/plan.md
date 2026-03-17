@@ -1,56 +1,64 @@
 
+Problem found:
+- Your project is publishing correctly to `https://budgetbuddyai7.lovable.app`.
+- I verified that URL and it is serving the current app.
+- `https://budgetbuddyai.co.uk` and `https://www.budgetbuddyai.co.uk` are serving a different, older landing page.
+- I also checked this Lovable project’s domain setup status: there is currently no custom domain attached to this project.
 
-# Why Budget and Goals Pages Still Show Old Items First
+What this means:
+- The issue is not “Publish failed”.
+- The custom domain is pointing somewhere else, or is attached to a different Lovable project/workspace.
+- That is why publishing here does nothing for `budgetbuddyai.co.uk`.
 
-## Root Cause
+Plan to fix:
+1. Open this project’s domain settings.
+2. Check whether `budgetbuddyai.co.uk` and `www.budgetbuddyai.co.uk` are connected to another Lovable project or still configured outside this project.
+3. Reconnect both domains to this exact project:
+   - `budgetbuddyai.co.uk`
+   - `www.budgetbuddyai.co.uk`
+4. Set one as the Primary domain.
+5. Confirm DNS at your registrar points to Lovable:
+   - A record for `@` → `185.158.133.1`
+   - A record for `www` → `185.158.133.1`
+   - required `_lovable` TXT verification record if prompted
+6. Wait for domain status to become Active.
+7. Publish once more and verify that the custom domain now matches the Lovable published URL.
 
-The previous fix only updated **two** places:
-1. `src/services/offlineStorage.ts` — the offline storage layer (used by `useOfflineBudgets` / `useOfflineSavingsGoals`)
-2. `src/hooks/useSavingsGoals.ts` — the online Supabase hook for goals (this **was** fixed)
+How to check it in Lovable:
+- Desktop:
+  - Click project name/top-left → Settings
+  - Open Domains
+  - If the domain is missing, add/connect it there
+- Mobile:
+  - Tap project name at the top → Settings
+  - Open Domains
+  - Add/connect both root and `www`
 
-But the **Budget page** (`BudgetManagement.tsx`) uses the **online** hook `useBudgets`, and that hook still sorts by `category` alphabetically — not by `created_at` descending. That's why new budgets appear wherever their category falls alphabetically, not at the top.
+Likely root causes:
+- The domain was connected to another Lovable project
+- Only DNS was changed, but the domain was never attached to this project
+- `www` and apex are split across different targets
+- Old hosting records still exist at the registrar
 
-For **Goals**, the online hook (`useSavingsGoals`) was correctly updated to `.order('created_at', { ascending: false })`. If goals still appear at the bottom, the component itself may be re-sorting or the local state update after `addGoal` appends to the end of the array before the refetch completes. I'll check and fix that too.
-
-## Fix
-
-### 1. `src/hooks/useBudgets.ts` (line 70)
-
-Change the Supabase query sort from:
-```ts
-.order('category')
+What to look for at the registrar:
+```text
+budgetbuddyai.co.uk      A      185.158.133.1
+www.budgetbuddyai.co.uk  A      185.158.133.1
+_lovable                 TXT    lovable_verify=...
 ```
-to:
-```ts
-.order('created_at', { ascending: false })
-```
 
-This ensures newly created budgets appear at the top.
+Important note:
+- Since this project reports no custom domain configured, the fix is primarily in Lovable domain settings and your DNS provider, not in the app code.
 
-### 2. `src/hooks/useSavingsGoals.ts` (line ~60, `addGoal` function)
+Fastest verification method:
+- Compare these two URLs:
+  - Current project publish target: `https://budgetbuddyai7.lovable.app`
+  - Desired custom domain: `https://www.budgetbuddyai.co.uk`
+- They should render the same app once the domain is correctly attached.
 
-The `addGoal` function currently appends new data to the end of the state array:
-```ts
-setGoals(prev => [...prev, data]);
-```
+Technical evidence I confirmed:
+- `budgetbuddyai7.lovable.app` returns the currently published app shell.
+- `budgetbuddyai.co.uk` and `www.budgetbuddyai.co.uk` return the older marketing landing page content.
+- This project currently has no custom domain configured in Lovable.
 
-Change to prepend:
-```ts
-setGoals(prev => [data, ...prev]);
-```
-
-This ensures the new goal appears at the top immediately, without waiting for a refetch.
-
-### 3. `src/hooks/useBudgets.ts` (~line 100, `addBudget` function)
-
-Same issue — check if it appends and fix to prepend.
-
----
-
-## Files Modified
-
-| File | Change |
-|------|--------|
-| `src/hooks/useBudgets.ts` | Sort by `created_at` descending; prepend new items in state |
-| `src/hooks/useSavingsGoals.ts` | Prepend new items in state instead of appending |
-
+If you want implementation/help next, the next step is not code changes; it is reconnecting the custom domain to this specific project and removing any conflicting old DNS/project attachment.
