@@ -617,6 +617,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_referral_code: { Args: { uid: string }; Returns: string }
       get_referral_leaderboard: {
         Args: never
         Returns: {
