@@ -129,7 +129,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         window.open(data.url, '_blank');
       }
     } catch (error) {
-      console.error('Error in openCustomerPortal:', error);
+      if (import.meta.env.DEV) console.error('Error in openCustomerPortal:', error);
       alert('Unable to open subscription management. Please try again later.');
     }
   };
