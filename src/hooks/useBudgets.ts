@@ -46,11 +46,11 @@ export function useBudgets() {
     ).then(
       (result) => {
         setEmailStatus({ success: true, message: 'Budget alert email sent successfully!' });
-        console.log('Email sent:', result.text);
+        if (import.meta.env.DEV) console.log('Email sent:', result.text);
       },
       (error) => {
         setEmailStatus({ success: false, message: 'Failed to send budget alert email.' });
-        console.error('Email send error:', error);
+        if (import.meta.env.DEV) console.error('Email send error:', error);
       }
     );
   };
