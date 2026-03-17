@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // THEN check for existing session with validation
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        console.error('❌ Session validation error:', error);
+        if (import.meta.env.DEV) console.error('Session validation error:', error);
         setSession(null);
         setUser(null);
         setLoading(false);
