@@ -20,7 +20,7 @@ export class SyncService {
       // Then sync local changes to server (push)
       await this.pushToServer(userId);
     } catch (error) {
-      console.error('Sync failed:', error);
+      if (import.meta.env.DEV) console.error('Sync failed:', error);
     } finally {
       this.isRunning = false;
     }
