@@ -20,7 +20,7 @@ export function ReferralDashboard() {
   const [copied, setCopied] = useState(false);
 
   // Fetch profile (referral_code, referral_count)
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["referral-profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -29,6 +29,13 @@ export function ReferralDashboard() {
         .eq("user_id", user!.id)
         .single();
       if (error) throw error;
+
+      // If no referral code exists, generate one via RPC
+      if (!data.referral_code) {
+        const { data: code, error: rpcError } = await supabase.rpc("generate_referral_code", { uid: user!.id });
+        if (rpcError) throw rpcError;
+        return { ...data, referral_code: code };
+      }
       return data;
     },
     enabled: !!user?.id,
