@@ -138,8 +138,10 @@ export function ReferralDashboard() {
         text: "Track your finances smarter",
         url: referralLink,
       });
-    } catch {
-      shareEmail();
+    } catch (err: any) {
+      if (err?.name !== "AbortError") {
+        shareEmail();
+      }
     }
   };
 
