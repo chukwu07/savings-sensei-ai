@@ -48,6 +48,34 @@ serve(async (req) => {
       throw new Error("Not authenticated");
     }
 
+    // Check subscription status for AI chat limits
+    const { data: subscriber } = await supabaseClient
+      .from("subscribers")
+      .select("subscribed")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const isSubscribed = subscriber?.subscribed === true;
+
+    if (!isSubscribed) {
+      // Count today's messages for free-tier users
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count } = await supabaseClient
+        .from("conversation_history")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("role", "user")
+        .gte("created_at", today.toISOString());
+
+      if ((count ?? 0) >= 10) {
+        return new Response(
+          JSON.stringify({ error: "Daily message limit reached. Upgrade to Premium for unlimited AI chat." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Fetch user's financial data
     const [transactionsRes, budgetsRes, goalsRes] = await Promise.all([
       supabaseClient.from("transactions").select("*").order("date", { ascending: false }).limit(50),

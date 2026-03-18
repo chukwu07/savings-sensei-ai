@@ -204,13 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error('Error in send-push-notification function:', error);
-    return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
-      }
-    );
+    return createSecureErrorResponse('Failed to send push notification.', 500);
   }
 };
 
