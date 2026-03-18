@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.redeem-promo-code]
 verify_jwt = true
+
+[functions.reactivate-subscription]
+verify_jwt = true
