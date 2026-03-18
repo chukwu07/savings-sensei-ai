@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createSecureErrorResponse } from '../_shared/securityUtils.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,12 +18,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
-
   try {
     logStep("Function started");
 
@@ -31,16 +26,38 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user) throw new Error("User not authenticated");
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
     const { subscriptionId } = await req.json();
     if (!subscriptionId) throw new Error("No subscription ID provided");
+
+    // Verify user owns this subscription
+    const { data: subData, error: fetchError } = await supabaseClient
+      .from("subscribers")
+      .select("stripe_subscription_id, user_id")
+      .eq("user_id", user.id)
+      .eq("stripe_subscription_id", subscriptionId)
+      .single();
+
+    if (fetchError || !subData) {
+      logStep("ERROR: Subscription not found or unauthorized", { error: fetchError });
+      throw new Error("Subscription not found or unauthorized");
+    }
+    logStep("Subscription ownership verified");
+
     logStep("Reactivating subscription", { subscriptionId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
@@ -55,8 +72,14 @@ serve(async (req) => {
       cancelAtPeriodEnd: subscription.cancel_at_period_end 
     });
 
-    // Update database
-    await supabaseClient
+    // Update database using service role for privileged update
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    await supabaseAdmin
       .from("subscribers")
       .update({ 
         cancel_at_period_end: false,
@@ -77,12 +100,6 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in reactivate-subscription", { message: errorMessage });
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    return createSecureErrorResponse('Failed to reactivate subscription.', 500);
   }
 });
