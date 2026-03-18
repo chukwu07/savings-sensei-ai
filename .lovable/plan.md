@@ -1,56 +1,68 @@
 
 
-# Why Budget and Goals Pages Still Show Old Items First
+## Fix Email Share Button — Final Plan
 
-## Root Cause
+**File:** `src/components/ReferralDashboard.tsx`
 
-The previous fix only updated **two** places:
-1. `src/services/offlineStorage.ts` — the offline storage layer (used by `useOfflineBudgets` / `useOfflineSavingsGoals`)
-2. `src/hooks/useSavingsGoals.ts` — the online Supabase hook for goals (this **was** fixed)
+### Changes
 
-But the **Budget page** (`BudgetManagement.tsx`) uses the **online** hook `useBudgets`, and that hook still sorts by `category` alphabetically — not by `created_at` descending. That's why new budgets appear wherever their category falls alphabetically, not at the top.
+1. **Replace share buttons section** with capability-based UI:
+   - Use `const canNativeShare = !!navigator.share` (no user-agent sniffing)
+   - If `canNativeShare` → show "Share" button; else → show "Email" button
+   - Always show WhatsApp, X Post, and Copy Link buttons
 
-For **Goals**, the online hook (`useSavingsGoals`) was correctly updated to `.order('created_at', { ascending: false })`. If goals still appear at the bottom, the component itself may be re-sorting or the local state update after `addGoal` appends to the end of the array before the refetch completes. I'll check and fix that too.
-
-## Fix
-
-### 1. `src/hooks/useBudgets.ts` (line 70)
-
-Change the Supabase query sort from:
+2. **Update `shareEmail` function** — keep `window.location.href` (not `window.open`), add clipboard fallback:
 ```ts
-.order('category')
-```
-to:
-```ts
-.order('created_at', { ascending: false })
-```
-
-This ensures newly created budgets appear at the top.
-
-### 2. `src/hooks/useSavingsGoals.ts` (line ~60, `addGoal` function)
-
-The `addGoal` function currently appends new data to the end of the state array:
-```ts
-setGoals(prev => [...prev, data]);
+const shareEmail = async () => {
+  const subject = encodeURIComponent("Try BudgetBuddy AI - Smart Money Management");
+  const body = encodeURIComponent(`Hey!\n\nI've been using BudgetBuddy AI to track my spending and it's been really helpful.\n\nYou can try it for free here: ${referralLink}\n\nEnjoy!`);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  try {
+    await navigator.clipboard.writeText(referralLink);
+    toast({ title: "Opening email…", description: "Link also copied to clipboard" });
+  } catch {}
+};
 ```
 
-Change to prepend:
+3. **Update `shareNative` to fall back to `shareEmail`** on failure/cancel:
 ```ts
-setGoals(prev => [data, ...prev]);
+const shareNative = async () => {
+  try {
+    await navigator.share({ title: "Join BudgetBuddy AI", text: "Track your finances smarter", url: referralLink });
+  } catch {
+    shareEmail();
+  }
+};
 ```
 
-This ensures the new goal appears at the top immediately, without waiting for a refetch.
+4. **Update button layout** (~lines 148-159):
+```tsx
+const canNativeShare = !!navigator.share;
+// ...
+{canNativeShare ? (
+  <Button size="sm" variant="outline" onClick={shareNative} disabled={!referralLink}>
+    <Share2 className="h-4 w-4 mr-1" /> Share
+  </Button>
+) : (
+  <Button size="sm" variant="outline" onClick={shareEmail} disabled={!referralLink}>
+    Email
+  </Button>
+)}
+<Button size="sm" variant="outline" onClick={shareWhatsApp} disabled={!referralLink} className="text-green-600">
+  WhatsApp
+</Button>
+<Button size="sm" variant="outline" onClick={shareTwitter} disabled={!referralLink}>
+  𝕏 Post
+</Button>
+<Button size="sm" variant="outline" onClick={copyLink} disabled={!referralLink}>
+  <Copy className="h-4 w-4 mr-1" /> Copy Link
+</Button>
+```
 
-### 3. `src/hooks/useBudgets.ts` (~line 100, `addBudget` function)
-
-Same issue — check if it appends and fix to prepend.
-
----
-
-## Files Modified
-
-| File | Change |
-|------|--------|
-| `src/hooks/useBudgets.ts` | Sort by `created_at` descending; prepend new items in state |
-| `src/hooks/useSavingsGoals.ts` | Prepend new items in state instead of appending |
+### Summary
+- Feature detection, not device detection
+- `mailto:` stays as `window.location.href` (not `window.open`)
+- Clipboard copy as the real reliability layer
+- Native share falls back to email on failure
+- Subject/body already `encodeURIComponent`'d (already done in current code)
 
