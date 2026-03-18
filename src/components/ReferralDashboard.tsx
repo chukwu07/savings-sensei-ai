@@ -127,7 +127,7 @@ export function ReferralDashboard() {
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
     try {
       await navigator.clipboard.writeText(referralLink);
-      toast({ title: "Opening email…", description: "Link also copied to clipboard" });
+      toast({ title: "Link copied", description: "Paste it into your email if needed" });
     } catch {}
   };
 
