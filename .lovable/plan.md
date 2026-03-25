@@ -1,33 +1,21 @@
 
 
-## Remove Duplicate Share Buttons
+## Replace WhatsApp with Share Button in ReferralPrompt
 
-**Problem**: The WhatsApp and Copy Link buttons in the share row are duplicates — Copy is already the icon button next to the referral code, and WhatsApp is accessible via the native Share sheet.
+**Problem**: The "WhatsApp" button is too narrow — a general "Share" button using the native share sheet (with email fallback) is more versatile and consistent with the ReferralDashboard.
 
-**Change in `src/components/ReferralDashboard.tsx`**:
+### Changes in `src/components/ReferralPrompt.tsx`
 
-Remove lines 189-197 (WhatsApp and Copy Link buttons), keeping only Share/Email + 𝕏 Post:
+**1. Replace `handleWhatsApp` with `handleShare`**
+- Use `navigator.share()` when available (opens native share sheet — includes WhatsApp, Messages, etc.)
+- Fall back to `mailto:` link + clipboard copy when native share isn't supported
+- Ignore `AbortError` (user cancelling the share dialog)
 
-```tsx
-<div className="flex flex-wrap gap-2">
-  {canNativeShare ? (
-    <Button size="sm" variant="outline" onClick={shareNative} disabled={!referralLink}>
-      <Share2 className="h-4 w-4 mr-1" /> Share
-    </Button>
-  ) : (
-    <Button size="sm" variant="outline" onClick={shareEmail} disabled={!referralLink}>
-      Email
-    </Button>
-  )}
-  <Button size="sm" variant="outline" onClick={shareTwitter} disabled={!referralLink}>
-    𝕏 Post
-  </Button>
-</div>
-```
+**2. Update the button label**
+- Change "WhatsApp" → "Share"
+- Keep the `Share2` icon (already imported)
 
-Also remove the now-unused `shareWhatsApp` function (lines 148-151) and the `Share2` import can stay (used by native share button).
+**Result**: Copy Link + Share — two clean buttons covering all sharing channels.
 
-**Result**: Two buttons — Share (or Email) + 𝕏 Post. Copy is handled by the dedicated icon button above.
-
-**Single file**: `src/components/ReferralDashboard.tsx`
+**Single file**: `src/components/ReferralPrompt.tsx`
 
