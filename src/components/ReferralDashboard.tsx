@@ -186,14 +186,8 @@ export function ReferralDashboard() {
                 Email
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={shareWhatsApp} disabled={!referralLink} className="text-green-600">
-              WhatsApp
-            </Button>
             <Button size="sm" variant="outline" onClick={shareTwitter} disabled={!referralLink}>
               𝕏 Post
-            </Button>
-            <Button size="sm" variant="outline" onClick={copyLink} disabled={!referralLink}>
-              <Copy className="h-4 w-4 mr-1" /> Copy Link
             </Button>
           </div>
         </CardContent>
