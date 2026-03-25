@@ -145,10 +145,6 @@ export function ReferralDashboard() {
     }
   };
 
-  const shareWhatsApp = () => {
-    const text = encodeURIComponent(`I'm using BudgetBuddy AI to manage my money. Try it free: ${referralLink}`);
-    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
-  };
 
   const shareTwitter = () => {
     const text = encodeURIComponent(`Managing my finances with @BudgetBuddyAI 💰 Join me: ${referralLink}`);
