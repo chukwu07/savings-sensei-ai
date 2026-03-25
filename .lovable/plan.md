@@ -1,42 +1,34 @@
 
 
-## Fix Social Link Preview Branding
+## Add Dark Mode Toggle
 
-### Problem
-`index.html` lines 14, 17-18 reference `lovable.dev` image and `@lovable_dev` Twitter handle. This causes WhatsApp/Twitter/Facebook previews to show "Lovable" branding.
+**What**: A button in Settings that lets users switch between the default light theme and a dark/black background. This is an accessibility feature for users who find bright screens uncomfortable.
 
-### Changes
+### How it works
 
-**1. Generate `public/og-image.png` (1200×630px)**
-- Programmatically create a branded social card using the app's brand colors:
-  - Background: dark navy (`hsl(210, 20%, 15%)` — the app's foreground/dark color)
-  - Primary blue accent: `hsl(210, 100%, 50%)`
-  - Green accent: `hsl(160, 60%, 50%)`
-- Content: "BudgetBuddy AI" title + "Smart Personal Finance Management" tagline
-- Clean, modern layout
+1. **Create a ThemeContext** (`src/contexts/ThemeContext.tsx`)
+   - Stores user preference (`light` / `dark`) in `localStorage`
+   - Toggles the `dark` class on `<html>` element (Tailwind's `darkMode: ["class"]` is already configured)
+   - Persists across sessions
 
-**2. Update `index.html` meta tags (lines 11-18)**
+2. **Add ThemeProvider to App.tsx**
+   - Wrap the app with the new `ThemeContext` provider
 
-Replace with:
-```html
-<meta property="og:title" content="BudgetBuddy AI" />
-<meta property="og:description" content="Smart Personal Finance Management with AI-powered insights. Track transactions, manage budgets, and achieve your savings goals." />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://www.budgetbuddyai.co.uk" />
-<meta property="og:image" content="https://www.budgetbuddyai.co.uk/og-image.png" />
+3. **Add toggle to Settings/More component** (`src/components/More.tsx`)
+   - Add a Moon/Sun icon toggle or Switch component in the settings area
+   - Label: "Dark Mode" with a brief description like "Easier on your eyes"
 
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site" content="@BudgetBuddyAI" />
-<meta name="twitter:image" content="https://www.budgetbuddyai.co.uk/og-image.png" />
-```
+### Technical details
+
+- Tailwind dark mode is already set up (`darkMode: ["class"]` in `tailwind.config.ts`)
+- Dark theme CSS variables are already defined in `index.css` (`.dark` class block)
+- No new dependencies needed — uses existing `Switch` component and `lucide-react` icons
 
 ### Files
 
 | File | Change |
 |------|--------|
-| `index.html` | Replace OG/Twitter meta tags (remove Lovable references) |
-| `public/og-image.png` | New 1200×630 branded social card |
-
-### Post-deploy note
-WhatsApp caches previews aggressively. Use [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) to force-refresh after deploying.
+| `src/contexts/ThemeContext.tsx` | New — theme state, localStorage persistence, toggle function |
+| `src/App.tsx` | Wrap with `ThemeProvider` |
+| `src/components/More.tsx` | Add Dark Mode toggle (Switch + Moon icon) in settings section |
 
