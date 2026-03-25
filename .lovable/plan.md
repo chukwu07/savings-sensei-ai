@@ -1,34 +1,18 @@
 
 
-## Add Dark Mode Toggle
+## Fix Dark Text on Goals Page
 
-**What**: A button in Settings that lets users switch between the default light theme and a dark/black background. This is an accessibility feature for users who find bright screens uncomfortable.
+**Problem**: The Goals page has hardcoded `text-black` classes on labels and values in the goal cards. In dark mode, black text on a dark background is unreadable.
 
-### How it works
+**Affected lines in `src/components/SavingsGoals.tsx`**:
+- Line 423: `text-black` → "Monthly Target" label
+- Line 427: `text-black` → monthly contribution value
+- Line 436: `text-black` → "Months Left" label
+- Line 440: `text-black` → months remaining value
+- Line 449: `text-black` → "Remaining" label
+- Line 453: `text-black` → remaining amount value
 
-1. **Create a ThemeContext** (`src/contexts/ThemeContext.tsx`)
-   - Stores user preference (`light` / `dark`) in `localStorage`
-   - Toggles the `dark` class on `<html>` element (Tailwind's `darkMode: ["class"]` is already configured)
-   - Persists across sessions
+**Fix**: Replace all 6 instances of `text-black` with `text-foreground`, which automatically adapts between light and dark themes using the CSS variable system already in place.
 
-2. **Add ThemeProvider to App.tsx**
-   - Wrap the app with the new `ThemeContext` provider
-
-3. **Add toggle to Settings/More component** (`src/components/More.tsx`)
-   - Add a Moon/Sun icon toggle or Switch component in the settings area
-   - Label: "Dark Mode" with a brief description like "Easier on your eyes"
-
-### Technical details
-
-- Tailwind dark mode is already set up (`darkMode: ["class"]` in `tailwind.config.ts`)
-- Dark theme CSS variables are already defined in `index.css` (`.dark` class block)
-- No new dependencies needed — uses existing `Switch` component and `lucide-react` icons
-
-### Files
-
-| File | Change |
-|------|--------|
-| `src/contexts/ThemeContext.tsx` | New — theme state, localStorage persistence, toggle function |
-| `src/App.tsx` | Wrap with `ThemeProvider` |
-| `src/components/More.tsx` | Add Dark Mode toggle (Switch + Moon icon) in settings section |
+**File**: `src/components/SavingsGoals.tsx` — 6 occurrences, single file edit.
 
