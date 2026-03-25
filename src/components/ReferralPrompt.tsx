@@ -101,9 +101,9 @@ export function ReferralPrompt() {
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? "Copied!" : "Copy Link"}
           </Button>
-          <Button size="sm" variant="outline" onClick={handleWhatsApp} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={handleShare} className="gap-1.5">
             <Share2 className="h-4 w-4" />
-            WhatsApp
+            Share
           </Button>
         </div>
       </div>
