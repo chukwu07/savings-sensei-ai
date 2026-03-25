@@ -27,6 +27,7 @@ export function More() {
   const [showAdmin, setShowAdmin] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   // Prevent background scroll when admin overlay is open
   useEffect(() => {
