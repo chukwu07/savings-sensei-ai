@@ -9,6 +9,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { PremiumProvider } from "@/contexts/PremiumContext";
 import { PushNotificationProvider } from "@/contexts/PushNotificationContext";
 import { NetworkProvider } from "@/contexts/NetworkContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SplashScreen } from "@/components/SplashScreen";
 import { BottomNav, TabType } from "@/components/BottomNav";
 import { SecurityMonitor } from "@/components/SecurityMonitor";
