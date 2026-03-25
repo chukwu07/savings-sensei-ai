@@ -114,6 +114,7 @@ function AppContent() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
     <AuthProvider>
       <CurrencyProvider>
         <PremiumProvider>
