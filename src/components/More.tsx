@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield, X, Gift } from "lucide-react";
+import { MessageCircle, Bell, Settings, Mail, Send, Crown, LogOut, User, Shield, X, Gift, Moon, Sun } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Notifications } from "./Notifications";
 import { AIChat } from "./AIChat";
 import { CurrencySelector } from "./CurrencySelector";
@@ -25,6 +27,7 @@ export function More() {
   const [showAdmin, setShowAdmin] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   // Prevent background scroll when admin overlay is open
   useEffect(() => {
@@ -323,6 +326,22 @@ export function More() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+              </div>
+            </EnhancedCard>
+
+            {/* Dark Mode Toggle */}
+            <EnhancedCard variant="settings" className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    {theme === "dark" ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Dark Mode</h3>
+                    <p className="text-sm text-muted-foreground">Easier on your eyes</p>
+                  </div>
+                </div>
+                <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
               </div>
             </EnhancedCard>
 
