@@ -145,10 +145,6 @@ export function ReferralDashboard() {
     }
   };
 
-  const shareWhatsApp = () => {
-    const text = encodeURIComponent(`I'm using BudgetBuddy AI to manage my money. Try it free: ${referralLink}`);
-    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
-  };
 
   const shareTwitter = () => {
     const text = encodeURIComponent(`Managing my finances with @BudgetBuddyAI 💰 Join me: ${referralLink}`);
@@ -186,14 +182,8 @@ export function ReferralDashboard() {
                 Email
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={shareWhatsApp} disabled={!referralLink} className="text-green-600">
-              WhatsApp
-            </Button>
             <Button size="sm" variant="outline" onClick={shareTwitter} disabled={!referralLink}>
               𝕏 Post
-            </Button>
-            <Button size="sm" variant="outline" onClick={copyLink} disabled={!referralLink}>
-              <Copy className="h-4 w-4 mr-1" /> Copy Link
             </Button>
           </div>
         </CardContent>
