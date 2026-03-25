@@ -329,6 +329,22 @@ export function More() {
               </div>
             </EnhancedCard>
 
+            {/* Dark Mode Toggle */}
+            <EnhancedCard variant="settings" className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    {theme === "dark" ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Dark Mode</h3>
+                    <p className="text-sm text-muted-foreground">Easier on your eyes</p>
+                  </div>
+                </div>
+                <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
+              </div>
+            </EnhancedCard>
+
             {/* Push Notification Settings */}
             <PushNotificationSettings />
 
