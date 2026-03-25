@@ -485,7 +485,7 @@ export default function Auth() {
       <div className="text-center mt-4 space-y-3">
         <button
           onClick={() => setCurrentScreen('forgot-password')}
-          className="text-sm text-gray-500 hover:text-foreground underline"
+          className="text-sm text-muted-foreground hover:text-foreground underline"
         >
           Forgot Password?
         </button>

@@ -26,8 +26,8 @@ export function BudgetAlertCard() {
       return {
         bgClass: "bg-destructive/10 border-destructive/30 hover:bg-destructive/15",
         iconClass: "text-destructive",
-        textClass: "text-black",
-        amountClass: "text-black font-bold"
+        textClass: "text-foreground",
+        amountClass: "text-foreground font-bold"
       };
     }
     
