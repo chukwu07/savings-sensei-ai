@@ -47,11 +47,27 @@ export function ReferralPrompt() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleWhatsApp = () => {
-    const text = encodeURIComponent(
-      `I've been using BudgetBuddy AI to manage my money smarter — it's brilliant! Join free here: ${link}`
-    );
-    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join BudgetBuddy AI",
+          text: "Track your finances smarter with AI-powered insights",
+          url: link,
+        });
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          await navigator.clipboard.writeText(link);
+          toast({ title: "Link copied!", description: "Paste it to share with friends." });
+        }
+      }
+    } else {
+      const subject = encodeURIComponent("Try BudgetBuddy AI");
+      const body = encodeURIComponent(`I've been using BudgetBuddy AI to manage my money smarter — it's brilliant! Join free here: ${link}`);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      await navigator.clipboard.writeText(link);
+      toast({ title: "Link copied!", description: "Paste it into your email if needed." });
+    }
   };
 
   const handleDismiss = () => {
@@ -85,9 +101,9 @@ export function ReferralPrompt() {
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? "Copied!" : "Copy Link"}
           </Button>
-          <Button size="sm" variant="outline" onClick={handleWhatsApp} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={handleShare} className="gap-1.5">
             <Share2 className="h-4 w-4" />
-            WhatsApp
+            Share
           </Button>
         </div>
       </div>
