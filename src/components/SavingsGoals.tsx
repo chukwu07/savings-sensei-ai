@@ -420,11 +420,11 @@ export function SavingsGoals() {
                         <div className="flex flex-col space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm">💰</span>
-                            <p className="text-xs text-black font-normal">
+                            <p className="text-xs text-foreground font-normal">
                               Monthly Target
                             </p>
                           </div>
-                          <div className="text-sm font-normal text-black truncate">
+                          <div className="text-sm font-normal text-foreground truncate">
                             {formatCurrency(monthlyContribution)}
                           </div>
                         </div>
@@ -433,11 +433,11 @@ export function SavingsGoals() {
                         <div className="flex flex-col space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm">⏳</span>
-                            <p className="text-xs text-black font-normal">
+                            <p className="text-xs text-foreground font-normal">
                               Months Left
                             </p>
                           </div>
-                          <div className="text-sm font-normal text-black">
+                          <div className="text-sm font-normal text-foreground">
                             {monthsRemaining}
                           </div>
                         </div>
@@ -446,11 +446,11 @@ export function SavingsGoals() {
                         <div className="flex flex-col space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm">📅</span>
-                            <p className="text-xs text-black font-normal">
+                            <p className="text-xs text-foreground font-normal">
                               Remaining
                             </p>
                           </div>
-                          <div className="text-sm font-normal text-black truncate">
+                          <div className="text-sm font-normal text-foreground truncate">
                             {formatCurrency(goal.target_amount - goal.current_amount)}
                           </div>
                         </div>
