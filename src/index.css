@@ -146,10 +146,11 @@ All colors MUST be HSL.
   }
 
   .dark {
+    color-scheme: dark;
     --background: 210 20% 8%;
     --foreground: 210 20% 95%;
 
-    --card: 210 20% 10%;
+    --card: 210 20% 13%;
     --card-foreground: 210 20% 95%;
 
     --popover: 210 20% 10%;
@@ -170,7 +171,7 @@ All colors MUST be HSL.
     --destructive: 0 84% 65%;
     --destructive-foreground: 210 20% 95%;
 
-    --border: 210 20% 20%;
+    --border: 210 20% 22%;
     --input: 210 20% 15%;
     --ring: 210 100% 60%;
 
