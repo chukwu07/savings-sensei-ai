@@ -1,45 +1,36 @@
 
 
-## Premium Upgrade Funnel for Savings Goals Limit
+## Dark Mode Polish — Final Fixes
 
-### What
-When a free-tier user hits the 3-goal limit, show a polished upgrade dialog with emotional copy, value stacking, pricing, and a one-click path to the Stripe payment flow. No more dead-end error toasts.
+Your app already uses theme-aware CSS variables throughout (no hardcoded `text-black`, `text-gray-*`, or `bg-white` remaining). The design system is solid. Here are the few remaining improvements:
 
 ### Changes
 
-**1. `src/hooks/useSavingsGoals.ts`** — Return limit signal
-- In `addGoal` catch block, detect "Free-tier limit" in error message
-- Return `{ limitReached: true }` instead of showing a generic toast
-- Other errors still show the error toast
+**1. `src/index.css`** — Add `color-scheme: dark` + improve card/background contrast
+- Add `color-scheme: dark` to `.dark` class (fixes native inputs, date pickers, scrollbars)
+- Increase card-to-background contrast: change `--card` from `210 20% 10%` to `210 20% 13%` (currently card and background are nearly identical at 10% vs 8%)
+- Bump `--border` from `210 20% 20%` to `210 20% 22%` for slightly more visible card edges
 
-**2. `src/hooks/useOfflineSavingsGoals.ts`** — Same detection
-- Mirror the limit detection pattern for offline mode
+**2. `src/components/Dashboard.tsx`** — Fix chart axis text color
+- The `XAxis` and `YAxis` use `className="text-muted-foreground"` which doesn't work reliably with Recharts SVG. Add explicit `stroke="hsl(var(--muted-foreground))"` and `tick={{ fill: 'hsl(var(--muted-foreground))' }}` props so axis labels are visible in dark mode
+- Add `stroke="hsl(var(--border))"` to `CartesianGrid` instead of relying on className
 
-**3. `src/components/SavingsGoals.tsx`** — Add upgrade dialog + payment flow
-- Add `showUpgradeModal` state and `paymentDialogOpen` state
-- In `handleAddGoal`, check if `addGoal` returns `{ limitReached: true }` → open upgrade dialog
-- Add a `Dialog` with:
-  - Emotional headline: "You've hit your goal limit"
-  - Subtext: "Upgrade to keep building your financial future without limits."
-  - Value stack checklist: Unlimited goals, AI insights, Advanced analytics, Priority support, Export data
-  - Pricing: "Just £6.99/month or £69.99/year"
-  - Primary CTA: "Upgrade to Premium" → opens `PaymentDialog`
-  - Ghost dismiss: "Maybe later"
-- Import and wire `PaymentDialog` with `monthlyPlan` from `getPricingPlans()`
-- On payment success, call `checkSubscription()` and close both dialogs
+### What's already working well
+- All text uses `text-foreground`, `text-muted-foreground`, etc.
+- Cards use `bg-card` with proper dark variants
+- Buttons use `primary` which stays bright in dark mode
+- Icons use theme-aware colors
+- Shadows already have dark-mode-specific values
+- Gradients have separate dark definitions
 
-### User Flow
-```text
-Tap "Add Goal" (4th) → DB rejects → Hook returns limitReached
-→ Upgrade Dialog appears (emotion + benefits + price)
-→ "Upgrade to Premium" → PaymentDialog (Stripe)
-→ Success → dialogs close → user can create goal
-```
+### Result
+- Native date pickers and scrollbars render correctly in dark mode
+- Cards visually separate from the background with more depth
+- Chart labels and grid lines are clearly visible
 
 ### Files
 | File | Change |
 |------|--------|
-| `src/hooks/useSavingsGoals.ts` | Detect free-tier limit, return signal |
-| `src/hooks/useOfflineSavingsGoals.ts` | Same limit detection |
-| `src/components/SavingsGoals.tsx` | Upgrade Dialog + PaymentDialog integration |
+| `src/index.css` | `color-scheme: dark`, improve card/border contrast |
+| `src/components/Dashboard.tsx` | Explicit chart axis colors for SVG compatibility |
 
