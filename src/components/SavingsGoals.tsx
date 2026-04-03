@@ -570,5 +570,75 @@ export function SavingsGoals() {
             Create Your First Goal
           </Button>
         </EnhancedCard>}
+
+      {/* Upgrade Modal */}
+      <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Crown className="h-6 w-6 text-primary" />
+              You've hit your goal limit 🚀
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Upgrade to keep building your financial future without limits.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              {[
+                "Unlimited savings goals",
+                "AI-powered financial insights",
+                "Advanced analytics & reports",
+                "Priority support",
+                "Export your data anytime",
+              ].map((feature) => (
+                <div key={feature} className="flex items-center gap-3">
+                  <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                  <span className="text-sm text-foreground">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center py-2">
+              <p className="text-sm text-muted-foreground">
+                Just <span className="font-semibold text-foreground">£6.99/month</span> or{" "}
+                <span className="font-semibold text-foreground">£69.99/year</span>
+              </p>
+            </div>
+
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => {
+                setShowUpgradeModal(false);
+                setPaymentDialogOpen(true);
+              }}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Upgrade to Premium
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              className="w-full text-muted-foreground" 
+              onClick={() => setShowUpgradeModal(false)}
+            >
+              Maybe later
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        initialPlan={monthlyPlan}
+        onSuccess={async () => {
+          setPaymentDialogOpen(false);
+          await checkSubscription();
+        }}
+      />
     </div>;
 }
