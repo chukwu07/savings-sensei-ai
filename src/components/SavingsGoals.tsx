@@ -22,6 +22,11 @@ import { getPricingPlans } from "@/lib/stripe-pricing";
 import { usePremium } from "@/contexts/PremiumContext";
 export function SavingsGoals() {
   if (import.meta.env.DEV) console.log('SavingsGoals component loading');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const { checkSubscription } = usePremium();
+  const pricingPlans = getPricingPlans();
+  const monthlyPlan = pricingPlans.find(p => p.interval === "month");
   const [newGoal, setNewGoal] = useState({
     name: "",
     target: "",
