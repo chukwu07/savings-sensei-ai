@@ -80,12 +80,12 @@ export function SavingsGoals() {
       deadline: result.data.deadline
     });
 
-    if (result2?.limitReached) {
+    if (result2 && 'limitReached' in result2) {
       setShowUpgradeModal(true);
       return;
     }
 
-    if (result2) {
+    if (result2 && 'id' in result2) {
       // Calculate monthly contribution needed
       const target = parseFloat(newGoal.target);
       const current = parseFloat(newGoal.current) || 0;
