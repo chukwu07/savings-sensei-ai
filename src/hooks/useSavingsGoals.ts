@@ -66,6 +66,10 @@ export function useSavingsGoals() {
       
       return data;
     } catch (error: any) {
+      const message = error?.message || "";
+      if (message.includes("Free-tier limit")) {
+        return { limitReached: true };
+      }
       toast({
         title: "Error",
         description: "Failed to create savings goal",
