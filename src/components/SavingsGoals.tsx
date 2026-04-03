@@ -8,14 +8,18 @@ import { Label } from "@/components/ui/label";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Target, Plus, Calendar, DollarSign, TrendingUp, Edit2, Trash2, Save, X, CheckCircle, Zap, Trophy, Star, Sparkles } from "lucide-react";
+import { Target, Plus, Calendar, DollarSign, TrendingUp, Edit2, Trash2, Save, X, CheckCircle, Zap, Trophy, Star, Sparkles, Crown, Check } from "lucide-react";
 import { formatCurrencyShort } from "@/utils/formatters";
 import { useSavingsGoals } from "@/hooks/useSavingsGoals";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
 import { savingsGoalSchema, formatZodError } from "@/lib/validation-schemas";
+import { PaymentDialog } from "@/components/premium/PaymentDialog";
+import { getPricingPlans } from "@/lib/stripe-pricing";
+import { usePremium } from "@/contexts/PremiumContext";
 export function SavingsGoals() {
   if (import.meta.env.DEV) console.log('SavingsGoals component loading');
   const [newGoal, setNewGoal] = useState({
