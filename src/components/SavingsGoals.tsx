@@ -73,13 +73,19 @@ export function SavingsGoals() {
       return;
     }
 
-    const success = await addGoal({
+    const result2 = await addGoal({
       name: result.data.name,
       target_amount: result.data.target_amount,
       current_amount: result.data.current_amount || 0,
       deadline: result.data.deadline
     });
-    if (success) {
+
+    if (result2?.limitReached) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (result2) {
       // Calculate monthly contribution needed
       const target = parseFloat(newGoal.target);
       const current = parseFloat(newGoal.current) || 0;
