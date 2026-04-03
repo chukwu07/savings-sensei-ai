@@ -1,21 +1,45 @@
 
 
-## Replace WhatsApp with Share Button in ReferralPrompt
+## Premium Upgrade Funnel for Savings Goals Limit
 
-**Problem**: The "WhatsApp" button is too narrow — a general "Share" button using the native share sheet (with email fallback) is more versatile and consistent with the ReferralDashboard.
+### What
+When a free-tier user hits the 3-goal limit, show a polished upgrade dialog with emotional copy, value stacking, pricing, and a one-click path to the Stripe payment flow. No more dead-end error toasts.
 
-### Changes in `src/components/ReferralPrompt.tsx`
+### Changes
 
-**1. Replace `handleWhatsApp` with `handleShare`**
-- Use `navigator.share()` when available (opens native share sheet — includes WhatsApp, Messages, etc.)
-- Fall back to `mailto:` link + clipboard copy when native share isn't supported
-- Ignore `AbortError` (user cancelling the share dialog)
+**1. `src/hooks/useSavingsGoals.ts`** — Return limit signal
+- In `addGoal` catch block, detect "Free-tier limit" in error message
+- Return `{ limitReached: true }` instead of showing a generic toast
+- Other errors still show the error toast
 
-**2. Update the button label**
-- Change "WhatsApp" → "Share"
-- Keep the `Share2` icon (already imported)
+**2. `src/hooks/useOfflineSavingsGoals.ts`** — Same detection
+- Mirror the limit detection pattern for offline mode
 
-**Result**: Copy Link + Share — two clean buttons covering all sharing channels.
+**3. `src/components/SavingsGoals.tsx`** — Add upgrade dialog + payment flow
+- Add `showUpgradeModal` state and `paymentDialogOpen` state
+- In `handleAddGoal`, check if `addGoal` returns `{ limitReached: true }` → open upgrade dialog
+- Add a `Dialog` with:
+  - Emotional headline: "You've hit your goal limit"
+  - Subtext: "Upgrade to keep building your financial future without limits."
+  - Value stack checklist: Unlimited goals, AI insights, Advanced analytics, Priority support, Export data
+  - Pricing: "Just £6.99/month or £69.99/year"
+  - Primary CTA: "Upgrade to Premium" → opens `PaymentDialog`
+  - Ghost dismiss: "Maybe later"
+- Import and wire `PaymentDialog` with `monthlyPlan` from `getPricingPlans()`
+- On payment success, call `checkSubscription()` and close both dialogs
 
-**Single file**: `src/components/ReferralPrompt.tsx`
+### User Flow
+```text
+Tap "Add Goal" (4th) → DB rejects → Hook returns limitReached
+→ Upgrade Dialog appears (emotion + benefits + price)
+→ "Upgrade to Premium" → PaymentDialog (Stripe)
+→ Success → dialogs close → user can create goal
+```
+
+### Files
+| File | Change |
+|------|--------|
+| `src/hooks/useSavingsGoals.ts` | Detect free-tier limit, return signal |
+| `src/hooks/useOfflineSavingsGoals.ts` | Same limit detection |
+| `src/components/SavingsGoals.tsx` | Upgrade Dialog + PaymentDialog integration |
 
