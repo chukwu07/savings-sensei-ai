@@ -234,14 +234,16 @@ export function Dashboard() {
             {spendingOverTime.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={spendingOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="date" 
-                    className="text-muted-foreground text-xs"
+                    stroke="hsl(var(--muted-foreground))"
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                     tickFormatter={(value) => `Day ${value}`}
                   />
                   <YAxis 
-                    className="text-muted-foreground text-xs"
+                    stroke="hsl(var(--muted-foreground))"
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                     tickFormatter={(value) => formatCurrency(value)}
                   />
                   <Tooltip 
