@@ -8,16 +8,25 @@ import { Label } from "@/components/ui/label";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Target, Plus, Calendar, DollarSign, TrendingUp, Edit2, Trash2, Save, X, CheckCircle, Zap, Trophy, Star, Sparkles } from "lucide-react";
+import { Target, Plus, Calendar, DollarSign, TrendingUp, Edit2, Trash2, Save, X, CheckCircle, Zap, Trophy, Star, Sparkles, Crown, Check } from "lucide-react";
 import { formatCurrencyShort } from "@/utils/formatters";
 import { useSavingsGoals } from "@/hooks/useSavingsGoals";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
 import { savingsGoalSchema, formatZodError } from "@/lib/validation-schemas";
+import { PaymentDialog } from "@/components/premium/PaymentDialog";
+import { getPricingPlans } from "@/lib/stripe-pricing";
+import { usePremium } from "@/contexts/PremiumContext";
 export function SavingsGoals() {
   if (import.meta.env.DEV) console.log('SavingsGoals component loading');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const { checkSubscription } = usePremium();
+  const pricingPlans = getPricingPlans();
+  const monthlyPlan = pricingPlans.find(p => p.interval === "month");
   const [newGoal, setNewGoal] = useState({
     name: "",
     target: "",
@@ -64,13 +73,19 @@ export function SavingsGoals() {
       return;
     }
 
-    const success = await addGoal({
+    const result2 = await addGoal({
       name: result.data.name,
       target_amount: result.data.target_amount,
       current_amount: result.data.current_amount || 0,
       deadline: result.data.deadline
     });
-    if (success) {
+
+    if (result2 && 'limitReached' in result2) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (result2 && 'id' in result2) {
       // Calculate monthly contribution needed
       const target = parseFloat(newGoal.target);
       const current = parseFloat(newGoal.current) || 0;
@@ -555,5 +570,75 @@ export function SavingsGoals() {
             Create Your First Goal
           </Button>
         </EnhancedCard>}
+
+      {/* Upgrade Modal */}
+      <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Crown className="h-6 w-6 text-primary" />
+              You've hit your goal limit 🚀
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Upgrade to keep building your financial future without limits.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              {[
+                "Unlimited savings goals",
+                "AI-powered financial insights",
+                "Advanced analytics & reports",
+                "Priority support",
+                "Export your data anytime",
+              ].map((feature) => (
+                <div key={feature} className="flex items-center gap-3">
+                  <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                  <span className="text-sm text-foreground">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center py-2">
+              <p className="text-sm text-muted-foreground">
+                Just <span className="font-semibold text-foreground">£6.99/month</span> or{" "}
+                <span className="font-semibold text-foreground">£69.99/year</span>
+              </p>
+            </div>
+
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => {
+                setShowUpgradeModal(false);
+                setPaymentDialogOpen(true);
+              }}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Upgrade to Premium
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              className="w-full text-muted-foreground" 
+              onClick={() => setShowUpgradeModal(false)}
+            >
+              Maybe later
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        initialPlan={monthlyPlan}
+        onSuccess={async () => {
+          setPaymentDialogOpen(false);
+          await checkSubscription();
+        }}
+      />
     </div>;
 }

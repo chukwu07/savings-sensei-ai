@@ -63,6 +63,10 @@ export function useOfflineSavingsGoals() {
       
       return result;
     } catch (error: any) {
+      const message = error?.message || "";
+      if (message.includes("Free-tier limit")) {
+        return { limitReached: true };
+      }
       console.error('Failed to add savings goal:', error);
     }
   };
