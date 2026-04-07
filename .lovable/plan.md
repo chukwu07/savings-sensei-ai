@@ -1,36 +1,44 @@
 
 
-## Dark Mode Polish — Final Fixes
+## Fix Stripe Webhook Configuration
 
-Your app already uses theme-aware CSS variables throughout (no hardcoded `text-black`, `text-gray-*`, or `bg-white` remaining). The design system is solid. Here are the few remaining improvements:
+### The problem
+Stripe is sending events to `bright-action` (a function that doesn't exist in your project). Your actual webhook handler is `stripe-webhook` and it's already deployed and working. This is a **Stripe Dashboard misconfiguration**, not a code issue.
 
-### Changes
+### What you need to do (in Stripe Dashboard — not code)
 
-**1. `src/index.css`** — Add `color-scheme: dark` + improve card/background contrast
-- Add `color-scheme: dark` to `.dark` class (fixes native inputs, date pickers, scrollbars)
-- Increase card-to-background contrast: change `--card` from `210 20% 10%` to `210 20% 13%` (currently card and background are nearly identical at 10% vs 8%)
-- Bump `--border` from `210 20% 20%` to `210 20% 22%` for slightly more visible card edges
+1. **Go to Stripe Dashboard → Developers → Webhooks**
+2. **Delete** the `bright-action` endpoint (it doesn't exist in your codebase)
+3. **Create or verify** a webhook endpoint pointing to:
+   ```
+   https://egrljooargciueeppecq.supabase.co/functions/v1/stripe-webhook
+   ```
+4. **Subscribe to these events**:
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.payment_succeeded`
+   - `invoice.payment_failed`
+   - `payment_intent.succeeded`
+5. **Copy the new Webhook Signing Secret** from Stripe and update it in your Supabase secrets (the `STRIPE_WEBHOOK_SECRET` secret) if it has changed
 
-**2. `src/components/Dashboard.tsx`** — Fix chart axis text color
-- The `XAxis` and `YAxis` use `className="text-muted-foreground"` which doesn't work reliably with Recharts SVG. Add explicit `stroke="hsl(var(--muted-foreground))"` and `tick={{ fill: 'hsl(var(--muted-foreground))' }}` props so axis labels are visible in dark mode
-- Add `stroke="hsl(var(--border))"` to `CartesianGrid` instead of relying on className
+### Optional code hardening (minor)
 
-### What's already working well
-- All text uses `text-foreground`, `text-muted-foreground`, etc.
-- Cards use `bg-card` with proper dark variants
-- Buttons use `primary` which stays bright in dark mode
-- Icons use theme-aware colors
-- Shadows already have dark-mode-specific values
-- Gradients have separate dark definitions
+**File: `supabase/functions/stripe-webhook/index.ts`**
 
-### Result
-- Native date pickers and scrollbars render correctly in dark mode
-- Cards visually separate from the background with more depth
-- Chart labels and grid lines are clearly visible
+Wrap the entire handler in a try/catch that always returns `200` — even on internal errors. Right now, missing env vars return `500` and bad signatures return `400`, which is technically correct but risks Stripe disabling the endpoint again if errors persist.
+
+Move the `500` for missing env vars and `400` for bad signature **inside** a logged warning, but still return `200` with `{ received: true, processed: false }`. This way Stripe never disables the endpoint, while you can still spot issues in your logs.
+
+### No database or migration changes needed
+
+Your `stripe_webhook_logs` table and `subscribers` table are already correctly set up.
 
 ### Files
 | File | Change |
 |------|--------|
-| `src/index.css` | `color-scheme: dark`, improve card/border contrast |
-| `src/components/Dashboard.tsx` | Explicit chart axis colors for SVG compatibility |
+| `supabase/functions/stripe-webhook/index.ts` | Optional: always return 200 to prevent future disabling |
+
+### User action required
+The main fix is in the **Stripe Dashboard** — delete the wrong endpoint and verify the correct one exists.
 
