@@ -1,44 +1,22 @@
 
 
-## Fix Stripe Webhook Configuration
+## Redeploy stripe-webhook Edge Function
 
-### The problem
-Stripe is sending events to `bright-action` (a function that doesn't exist in your project). Your actual webhook handler is `stripe-webhook` and it's already deployed and working. This is a **Stripe Dashboard misconfiguration**, not a code issue.
+### What
+The `STRIPE_WEBHOOK_SECRET` is already set in Supabase secrets (updated 07 Apr 2026 05:37:06). No secret needs to be added. The edge function just needs a redeploy to ensure it uses the latest secret value.
 
-### What you need to do (in Stripe Dashboard — not code)
+### Steps
 
-1. **Go to Stripe Dashboard → Developers → Webhooks**
-2. **Delete** the `bright-action` endpoint (it doesn't exist in your codebase)
-3. **Create or verify** a webhook endpoint pointing to:
-   ```
-   https://egrljooargciueeppecq.supabase.co/functions/v1/stripe-webhook
-   ```
-4. **Subscribe to these events**:
-   - `customer.subscription.created`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
-   - `invoice.payment_succeeded`
-   - `invoice.payment_failed`
-   - `payment_intent.succeeded`
-5. **Copy the new Webhook Signing Secret** from Stripe and update it in your Supabase secrets (the `STRIPE_WEBHOOK_SECRET` secret) if it has changed
+**1. Redeploy `supabase/functions/stripe-webhook/index.ts`**
+- No code changes needed — the verification logic is already correct
+- A trivial whitespace or comment touch will trigger redeployment
 
-### Optional code hardening (minor)
-
-**File: `supabase/functions/stripe-webhook/index.ts`**
-
-Wrap the entire handler in a try/catch that always returns `200` — even on internal errors. Right now, missing env vars return `500` and bad signatures return `400`, which is technically correct but risks Stripe disabling the endpoint again if errors persist.
-
-Move the `500` for missing env vars and `400` for bad signature **inside** a logged warning, but still return `200` with `{ received: true, processed: false }`. This way Stripe never disables the endpoint, while you can still spot issues in your logs.
-
-### No database or migration changes needed
-
-Your `stripe_webhook_logs` table and `subscribers` table are already correctly set up.
+**2. Verify**
+- Send a test webhook from Stripe Dashboard
+- Check edge function logs for "Webhook signature verified" message
 
 ### Files
 | File | Change |
 |------|--------|
-| `supabase/functions/stripe-webhook/index.ts` | Optional: always return 200 to prevent future disabling |
-
-### User action required
-The main fix is in the **Stripe Dashboard** — delete the wrong endpoint and verify the correct one exists.
+| `supabase/functions/stripe-webhook/index.ts` | Trivial touch to trigger redeploy (no logic change) |
 
