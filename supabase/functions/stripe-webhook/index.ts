@@ -26,10 +26,10 @@ Deno.serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !supabaseServiceRoleKey) {
-      logStep('Missing environment variables');
+      logStep('Missing environment variables — returning 200 to keep endpoint active');
       return new Response(
-        JSON.stringify({ error: 'Missing environment variables' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ received: true, processed: false, error: 'Missing environment variables' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -44,10 +44,10 @@ Deno.serve(async (req) => {
     // Get the signature from headers
     const signature = req.headers.get('stripe-signature');
     if (!signature) {
-      logStep('Missing stripe signature');
+      logStep('Missing stripe signature — returning 200 to keep endpoint active');
       return new Response(
-        JSON.stringify({ error: 'Missing stripe signature' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ received: true, processed: false, error: 'Missing stripe signature' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -62,8 +62,8 @@ Deno.serve(async (req) => {
     } catch (err: any) {
       logStep('[Internal] Webhook signature verification failed', { error: err.message });
       return new Response(
-        JSON.stringify({ error: 'Webhook verification failed' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ received: true, processed: false, error: 'Webhook verification failed' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -456,8 +456,8 @@ Deno.serve(async (req) => {
     logStep('[Internal] Webhook handler error', { error: error.message });
     console.error('[Internal] Webhook error:', error);
     return new Response(
-      JSON.stringify({ error: 'Webhook processing failed' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ received: true, processed: false, error: 'Webhook processing failed' }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
