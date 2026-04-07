@@ -6,6 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Last redeployed: 2026-04-07
 const logStep = (step: string, details?: any) => {
   console.log(`[Stripe Webhook] ${step}`, details ? JSON.stringify(details, null, 2) : '');
 };
