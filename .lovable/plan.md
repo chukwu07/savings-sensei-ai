@@ -1,120 +1,93 @@
-## Fix: "Credential not found" → Link Resend connector (final, corrected)
+# Plan — Subdomain DNS approach (safe for Hostinger)
 
-Single root cause: the Lovable connector gateway has no registered Resend binding for this workspace. The Edge Function, DB, auth, and rate limiting are all working — only the credential resolution step at the gateway boundary is failing. This plan fixes only that, with no DNS, UI, or architecture changes.
+## Why this works
 
----
+You add Resend records on a **brand-new subdomain** (`mail.budgetbuddyai.co.uk`) only. Your existing Hostinger setup on the **root domain** (`budgetbuddyai.co.uk`) — MX records, SPF, your inbox at `support@budgetbuddyai.co.uk` — is **not touched**. The two zones are independent, so your inbox keeps working exactly as it does today.
 
-### Layer responsibilities (locked in)
-
-| Layer | Responsibility | Success signal |
-|------|----------------|----------------|
-| Edge Function | Request orchestration | 2xx returned to client |
-| Gateway | Credential resolution | `verify_credentials` outcome = `verified` |
-| Resend | Delivery attempt | `resend_id` returned |
-| Inbox | Final receipt | Best-effort, non-deterministic, out of scope |
-
-The connector registry is the **only** source of truth for credentials. Env var presence is *not* a proxy for connector health.
+End result:
+- App sends **from** `support@mail.budgetbuddyai.co.uk` (Resend, branded, no sandbox limit)
+- Your team replies **to** `support@budgetbuddyai.co.uk` (Hostinger, unchanged)
+- Reply-To is set to the user's email so you reply directly to them
 
 ---
 
-### Step 1 — Link Resend connector (the actual fix)
+## Step 1 — You add the domain in Resend (manual, ~2 min)
 
-Use the standard connector flow to link Resend to this project. This creates the workspace → Resend binding the gateway needs to resolve credentials at runtime. No code, DNS, or schema changes.
+1. Resend dashboard → **Domains** → **Add Domain**
+2. Enter exactly: `mail.budgetbuddyai.co.uk`
+3. Region: pick the closest (EU recommended for UK users)
+4. Resend shows you 3–4 DNS records (TXT for SPF, CNAME for DKIM, optional MX for bounce tracking, optional DMARC)
 
-### Step 2 — Verify the binding (correctness gate)
+**Leave the page open** — you'll need to paste those records into Hostinger.
 
-Call the gateway's `verify_credentials` endpoint and treat results strictly:
+---
 
-| `outcome` | Action |
-|-----------|--------|
-| `verified` | ✅ Proceed to Step 3 |
-| `skipped` | ⚠️ Do **not** treat as success. Re-run once; if still skipped, proceed cautiously and rely on Step 3 as the real test |
-| `failed` | ❌ Stop. Surface error and reconnect |
-| HTTP 4xx/5xx | ❌ Stop. Binding not usable |
+## Step 2 — You add the records in Hostinger (manual, ~3 min)
 
-Only `verified` is a green light. This was the key correction.
+In Hostinger → **Domains → DNS / Nameservers → DNS Zone Editor** for `budgetbuddyai.co.uk`:
 
-### Step 3 — End-to-end smoke test
+For each record Resend gave you, paste the **Name** and **Value** exactly. Important Hostinger quirk:
+- If Resend says Name = `mail`, you enter `mail` (Hostinger auto-appends `.budgetbuddyai.co.uk`)
+- If Resend says Name = `resend._domainkey.mail`, enter exactly that (Hostinger appends the rest)
+- **Do NOT touch any existing MX, A, or TXT records on the root** — only add the new ones Resend specifies
 
-Invoke `send-support-message` with a real test payload and confirm:
-- Function returns 2xx
-- `support_messages` row transitions `pending → sent`
-- `resend_id` is populated (this is the gateway success boundary — not inbox arrival)
+Save. Wait 1–10 minutes.
 
-### Step 4 — Edge Function observability (resolution-based, not env-based)
+**Safety check:** None of these records have Name = `@` or Name = empty. They all start with `mail` or end with `.mail`. That's the guarantee your root domain stays untouched.
 
-Update `supabase/functions/send-support-message/index.ts` to log based on **gateway resolution outcome**, not local env presence. Env checks misrepresent connector state and contradict the registry-as-source-of-truth model.
+---
 
-**On Resend gateway call failure** (replace any env-based pre-check with this):
+## Step 3 — You click "Verify" in Resend
+
+Once verified (green checkmark), tell me and I'll do step 4.
+
+---
+
+## Step 4 — I update the Edge Function (one-line change)
+
+In `supabase/functions/send-support-message/index.ts` line 196, change:
+
 ```ts
-if (!resendResponse.ok) {
-  const errorBody = await resendResponse.text();
-  const isCredentialError =
-    resendResponse.status === 401 ||
-    errorBody.includes('Credential not found');
-
-  console.error('[SEND-SUPPORT-MESSAGE] Connector resolution failed', {
-    reason: isCredentialError ? 'missing_or_invalid_resend_connector' : 'gateway_error',
-    connector_id: 'resend',
-    http_status: resendResponse.status,
-    error_body: errorBody.slice(0, 500),
-    message_id: insertedRow.id,
-  });
-  // ... existing failure path: update row to status='failed', return error
-}
+from: "BudgetBuddy Support <onboarding@resend.dev>",
 ```
 
-**On success** (after `resend_id` is obtained):
+to:
+
 ```ts
-console.log('[SEND-SUPPORT-MESSAGE] Connector resolved', {
-  connector_id: 'resend',
-  message_id: insertedRow.id,
-  resend_id: resendData.id,
-});
+from: "BudgetBuddy Support <support@mail.budgetbuddyai.co.uk>",
 ```
 
-**Removed from previous plan:** the `Deno.env.get('RESEND_API_KEY')` pre-check. Env presence does not reflect connector binding state and would re-introduce the dual-source confusion we explicitly rejected.
+The `to` address (`support@budgetbuddyai.co.uk`) and Reply-To logic stay exactly as they are.
 
-### Step 5 — Race-safe audit cleanup
-
-Update the stuck pending row (`55e50f51-...`) using `status` as primary truth, with `id` providing race protection:
-
-```sql
-UPDATE support_messages
-SET status = 'failed',
-    error  = 'Connector not linked at send time',
-    updated_at = now()
-WHERE id = '55e50f51-...'
-  AND status = 'pending';
-```
-
-Drop the `resend_id IS NULL` clause — `status = 'pending'` is the authoritative signal, and `id` already protects against races.
+Then I redeploy `send-support-message`.
 
 ---
 
-### Files changed
+## Step 5 — I smoke-test
 
-| File | Change |
-|------|--------|
-| `supabase/functions/send-support-message/index.ts` | Replace env-based guard with gateway-response-based failure log + add success resolution log |
-| `support_messages` (one row) | Mark stuck pending record as failed |
-| Connector registry | Link Resend (no code) |
-
----
-
-### Failure mode taxonomy (for future debugging)
-
-This fix eliminates **case 1**. The other cases are now distinguishable from logs:
-
-1. **Missing connector** — `verify_credentials` 4xx, gateway returns "Credential not found" → relink
-2. **Invalid/revoked secret** — `verify_credentials` outcome `failed` → reconnect with fresh key
-3. **Rotated credential** — same as #2 → reconnect
-4. **Transient gateway outage** — intermittent 5xx → retry / status page
+- Trigger the Contact Support dialog from the app
+- Check `support_messages` row goes to `status = 'sent'` with a `resend_id`
+- Check the email arrives in your `support@budgetbuddyai.co.uk` Hostinger inbox
+- Check Reply-To shows the user's email so you can reply directly
 
 ---
 
-### Out of scope (deferred)
+## What I need from you to start
 
-- Connector health pre-check endpoint (good follow-up; not needed to ship this fix)
-- Custom verified sender domain (requires DNS — explicitly off-limits per Hostinger constraint)
-- Admin retry UI for `failed` rows
+Just two things, in this order:
+1. Confirm "go ahead" so I switch out of plan mode
+2. Then **you** complete Steps 1–3 (Resend dashboard + Hostinger DNS + verify)
+
+I'll handle Steps 4–5 the moment you tell me Resend shows the domain as verified.
+
+---
+
+## Failure modes to know
+
+| If this happens | Cause | Fix |
+|---|---|---|
+| Resend says "DNS not found" after 1 hour | Records pasted with wrong Name (e.g., included full FQDN twice) | Re-check Hostinger entries — Name should not contain `.budgetbuddyai.co.uk` |
+| Hostinger inbox stops working | Only possible if you accidentally edited the root MX records | Restore root MX records to Hostinger defaults |
+| Email lands in spam | DKIM not yet propagated, or DMARC missing | Wait 24h, optionally add DMARC TXT record Resend suggests |
+
+Nothing in Step 4 (the code change) can break your inbox — it only changes what address the app sends *from*.
