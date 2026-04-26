@@ -555,6 +555,51 @@ export type Database = {
         }
         Relationships: []
       }
+      support_messages: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          message: string
+          resend_id: string | null
+          route: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_agent: string | null
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          message: string
+          resend_id?: string | null
+          route?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_agent?: string | null
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          message?: string
+          resend_id?: string | null
+          route?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
