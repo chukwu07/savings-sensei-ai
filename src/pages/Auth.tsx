@@ -26,6 +26,18 @@ export default function Auth() {
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
 
+  // After successful auth, honour ?redirect=<same-origin path> so users return
+  // to where they came from (e.g. opening Contact Support from /more).
+  useEffect(() => {
+    if (!user) return;
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+      window.history.replaceState({}, document.title, redirect);
+      window.location.assign(redirect);
+    }
+  }, [user]);
+
   // Capture ?ref= URL param on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
