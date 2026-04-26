@@ -1,128 +1,120 @@
-## In-App Support System — Final Hardened Plan
+## Fix: "Credential not found" → Link Resend connector (final, corrected)
 
-Replaces the broken `mailto:support@budgetbuddyai.co.uk` links with a real in-app messaging system: secure Edge Function + audit table + Resend delivery + clean UX. Incorporates all six correctness fixes from review.
+Single root cause: the Lovable connector gateway has no registered Resend binding for this workspace. The Edge Function, DB, auth, and rate limiting are all working — only the credential resolution step at the gateway boundary is failing. This plan fixes only that, with no DNS, UI, or architecture changes.
 
 ---
 
-### 1. Database — `support_messages` audit table
+### Layer responsibilities (locked in)
 
-Migration creates:
+| Layer | Responsibility | Success signal |
+|------|----------------|----------------|
+| Edge Function | Request orchestration | 2xx returned to client |
+| Gateway | Credential resolution | `verify_credentials` outcome = `verified` |
+| Resend | Delivery attempt | `resend_id` returned |
+| Inbox | Final receipt | Best-effort, non-deterministic, out of scope |
 
-```sql
-create table public.support_messages (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  user_email text not null,
-  subject text not null,
-  message text not null,
-  status text not null default 'pending', -- 'pending' | 'sent' | 'failed'
-  error text,
-  resend_id text,
-  user_agent text,
-  route text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+The connector registry is the **only** source of truth for credentials. Env var presence is *not* a proxy for connector health.
 
-alter table public.support_messages enable row level security;
+---
+
+### Step 1 — Link Resend connector (the actual fix)
+
+Use the standard connector flow to link Resend to this project. This creates the workspace → Resend binding the gateway needs to resolve credentials at runtime. No code, DNS, or schema changes.
+
+### Step 2 — Verify the binding (correctness gate)
+
+Call the gateway's `verify_credentials` endpoint and treat results strictly:
+
+| `outcome` | Action |
+|-----------|--------|
+| `verified` | ✅ Proceed to Step 3 |
+| `skipped` | ⚠️ Do **not** treat as success. Re-run once; if still skipped, proceed cautiously and rely on Step 3 as the real test |
+| `failed` | ❌ Stop. Surface error and reconnect |
+| HTTP 4xx/5xx | ❌ Stop. Binding not usable |
+
+Only `verified` is a green light. This was the key correction.
+
+### Step 3 — End-to-end smoke test
+
+Invoke `send-support-message` with a real test payload and confirm:
+- Function returns 2xx
+- `support_messages` row transitions `pending → sent`
+- `resend_id` is populated (this is the gateway success boundary — not inbox arrival)
+
+### Step 4 — Edge Function observability (resolution-based, not env-based)
+
+Update `supabase/functions/send-support-message/index.ts` to log based on **gateway resolution outcome**, not local env presence. Env checks misrepresent connector state and contradict the registry-as-source-of-truth model.
+
+**On Resend gateway call failure** (replace any env-based pre-check with this):
+```ts
+if (!resendResponse.ok) {
+  const errorBody = await resendResponse.text();
+  const isCredentialError =
+    resendResponse.status === 401 ||
+    errorBody.includes('Credential not found');
+
+  console.error('[SEND-SUPPORT-MESSAGE] Connector resolution failed', {
+    reason: isCredentialError ? 'missing_or_invalid_resend_connector' : 'gateway_error',
+    connector_id: 'resend',
+    http_status: resendResponse.status,
+    error_body: errorBody.slice(0, 500),
+    message_id: insertedRow.id,
+  });
+  // ... existing failure path: update row to status='failed', return error
+}
 ```
 
-**RLS — corrected per review point #1:**
-- ✅ Users can **SELECT** their own rows only
-- ✅ Admins can **SELECT** all rows (via `has_role(auth.uid(), 'admin')`)
-- ❌ **No user INSERT policy** — inserts are performed by the Edge Function using the service role, which bypasses RLS
-- ❌ No UPDATE/DELETE for users
+**On success** (after `resend_id` is obtained):
+```ts
+console.log('[SEND-SUPPORT-MESSAGE] Connector resolved', {
+  connector_id: 'resend',
+  message_id: insertedRow.id,
+  resend_id: resendData.id,
+});
+```
 
-**Status lifecycle (review point #6) — explicitly defined:**
-- `pending` = row inserted, Resend call not yet attempted or in flight
-- `sent` = Resend returned success (`resend_id` populated)
-- `failed` = Resend returned error or threw (`error` populated)
+**Removed from previous plan:** the `Deno.env.get('RESEND_API_KEY')` pre-check. Env presence does not reflect connector binding state and would re-introduce the dual-source confusion we explicitly rejected.
 
----
+### Step 5 — Race-safe audit cleanup
 
-### 2. Edge Function — `supabase/functions/send-support-message/index.ts`
+Update the stuck pending row (`55e50f51-...`) using `status` as primary truth, with `id` providing race protection:
 
-**Config (review point #2):** registered in `supabase/config.toml` with `verify_jwt = false`. Auth is enforced **manually in code** as the single source of truth — no double enforcement, easier debugging.
+```sql
+UPDATE support_messages
+SET status = 'failed',
+    error  = 'Connector not linked at send time',
+    updated_at = now()
+WHERE id = '55e50f51-...'
+  AND status = 'pending';
+```
 
-**Flow:**
-1. Handle CORS preflight
-2. Read `Authorization: Bearer <jwt>` header → 401 if missing
-3. Create user-scoped client → `supabase.auth.getUser(token)` → 401 if invalid
-4. **Email verification check (review point #4):** require `user.email_confirmed_at != null`. If unverified, still send the email but **omit the `Reply-To` header** and prepend a `[UNVERIFIED EMAIL]` tag to the subject so support staff don't reply to a spoofable address
-5. Validate body with Zod:
-   - `subject`: trimmed, 1–150 chars
-   - `message`: trimmed, 1–2000 chars
-   - `route` (optional): string, ≤200 chars (review point — bonus context)
-6. **Rate limiting (review point #3):**
-   - **Primary:** per-`user_id`, 5 messages / hour (this is the real control)
-   - **Defence-in-depth only:** per-IP backstop using hash of `x-forwarded-for + user-agent`, 20 / hour. Documented in code comments as best-effort, not a security boundary
-7. Insert row into `support_messages` with `status = 'pending'` using **service-role client**
-8. Send via Resend gateway (per house Resend pattern using `LOVABLE_API_KEY` + `RESEND_API_KEY`):
-   - `from`: `BudgetBuddy Support <onboarding@resend.dev>` (until a verified domain is wired up)
-   - `to`: `support@budgetbuddyai.co.uk`
-   - `reply_to`: user email **only if email_confirmed_at is set**
-   - Subject: `[Support] <subject>` (or `[UNVERIFIED EMAIL] [Support] <subject>`)
-   - HTML body: user email, user_id, route, user-agent, then message
-9. Update row → `status = 'sent'` + `resend_id`, or `status = 'failed'` + `error`
-10. Return `{ ok: true, id }` (200) or sanitized error (4xx/5xx) with CORS headers on every response
+Drop the `resend_id IS NULL` clause — `status = 'pending'` is the authoritative signal, and `id` already protects against races.
 
 ---
 
-### 3. UI — `src/components/support/ContactSupportDialog.tsx`
-
-Shadcn `Dialog` containing a `react-hook-form` + Zod form (subject + message), with these states:
-- **Unauthenticated:** show "Log in to contact support" with a button that navigates to `/auth?redirect=<current-path>` (review point #5 — return-path handling so users land back where they were)
-- **Idle:** form visible, char counters, helper line *"We usually respond within 24 hours."*
-- **Submitting:** disabled inputs, inline "Sending…" state on the button
-- **Success:** replace form with a confirmation block *"Message sent ✓ — we've received your message and will reply by email."* + Close button
-- **Error:** inline error banner above the form with a Retry action
-
-The component reads `window.location.pathname` and the navigator user-agent and includes them in the request payload as `route` for support context (review bonus suggestion #3).
-
-It also needs to handle the `?redirect=...` param on `/auth` — `src/pages/Auth.tsx` will be updated to read the param and navigate back to that path on successful sign-in (falling back to `/` if absent or unsafe).
-
----
-
-### 4. Integration points
-
-- `src/components/More.tsx` — replace the `<a href="mailto:…">` with a button that opens `<ContactSupportDialog />`
-- `src/components/legal/LegalFooter.tsx` — same replacement; works on public/legal pages, where it will show the "Log in to contact support" state cleanly (no dead end)
-- `src/pages/Auth.tsx` — honour `?redirect=<path>` query param after sign-in (validated to be a same-origin relative path)
-
----
-
-### 5. Files changed
+### Files changed
 
 | File | Change |
 |------|--------|
-| `supabase/migrations/<timestamp>_support_messages.sql` | Create table + RLS (SELECT-only for users/admins; no user INSERT) |
-| `supabase/functions/send-support-message/index.ts` | New function (manual JWT auth, dual rate limit, email-verified reply-to, status lifecycle) |
-| `supabase/config.toml` | Register function with `verify_jwt = false` |
-| `src/components/support/ContactSupportDialog.tsx` | New dialog component with all UX states |
-| `src/components/More.tsx` | Replace mailto link with dialog trigger |
-| `src/components/legal/LegalFooter.tsx` | Replace mailto link with dialog trigger |
-| `src/pages/Auth.tsx` | Honour `?redirect=` param after sign-in |
+| `supabase/functions/send-support-message/index.ts` | Replace env-based guard with gateway-response-based failure log + add success resolution log |
+| `support_messages` (one row) | Mark stuck pending record as failed |
+| Connector registry | Link Resend (no code) |
 
 ---
 
-### 6. Review-point coverage checklist
+### Failure mode taxonomy (for future debugging)
 
-| # | Issue | Resolution |
-|---|------|------------|
-| 1 | RLS INSERT misconfig | No user INSERT policy; service role inserts only |
-| 2 | Double JWT enforcement | `verify_jwt = false` + manual `getUser()` only |
-| 3 | Fragile IP rate limit | User-id is primary; IP is documented defence-in-depth |
-| 4 | Reply-to spoof risk | Only set Reply-To when `email_confirmed_at` is non-null; tag subject otherwise |
-| 5 | Lost context after login | `/auth?redirect=<path>` round-trip |
-| 6 | Ambiguous status | `pending` / `sent` / `failed` semantics defined and enforced |
+This fix eliminates **case 1**. The other cases are now distinguishable from logs:
+
+1. **Missing connector** — `verify_credentials` 4xx, gateway returns "Credential not found" → relink
+2. **Invalid/revoked secret** — `verify_credentials` outcome `failed` → reconnect with fresh key
+3. **Rotated credential** — same as #2 → reconnect
+4. **Transient gateway outage** — intermittent 5xx → retry / status page
 
 ---
 
-### Out of scope (deferred polish)
+### Out of scope (deferred)
 
-These were good suggestions but deliberately not in this plan to keep scope tight:
-- Admin dashboard view of `support_messages`
-- Cron-based retry of `failed` rows
-- Verified custom sending domain (still using `onboarding@resend.dev` for now)
-
-Happy to add any of them as a follow-up once this ships.
+- Connector health pre-check endpoint (good follow-up; not needed to ship this fix)
+- Custom verified sender domain (requires DNS — explicitly off-limits per Hostinger constraint)
+- Admin retry UI for `failed` rows
