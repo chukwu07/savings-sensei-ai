@@ -19,12 +19,14 @@ import { ProfileSettings } from "./ProfileSettings";
 import { useQuery } from "@tanstack/react-query";
 import { AdminPanel } from "./AdminPanel";
 import { ReferralDashboard } from "./ReferralDashboard";
+import { ContactSupportDialog } from "./support/ContactSupportDialog";
 
 export function More() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [currentTab, setCurrentTab] = useState("notifications");
   const [showAdmin, setShowAdmin] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
