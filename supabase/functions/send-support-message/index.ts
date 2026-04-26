@@ -160,8 +160,10 @@ serve(async (req) => {
     log("Inserted pending row", { id: messageId });
 
     // 5. Send via Resend (through Lovable connector gateway)
+    // Connector secret is bound by the workspace connector registry — registry is the single source of truth.
+    // Prefer RESEND_API_KEY_1 (newly linked connector) and fall back to RESEND_API_KEY for backwards compatibility.
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-    const resendKey = Deno.env.get("RESEND_API_KEY");
+    const resendKey = Deno.env.get("RESEND_API_KEY_1") ?? Deno.env.get("RESEND_API_KEY");
     if (!lovableKey || !resendKey) {
       const errMsg = "Email provider not configured";
       await adminClient
@@ -216,16 +218,33 @@ serve(async (req) => {
       const respJson = await resp.json().catch(() => ({} as Record<string, unknown>));
 
       if (!resp.ok) {
+        const errBody = JSON.stringify(respJson).slice(0, 500);
         const errMsg = (respJson as { message?: string })?.message ?? `Resend HTTP ${resp.status}`;
+        // Resolution-based failure log — distinguishes missing/invalid connector binding from generic gateway errors.
+        const isCredentialError =
+          resp.status === 401 ||
+          resp.status === 404 ||
+          errBody.includes("Credential not found");
+        console.error("[SEND-SUPPORT-MESSAGE] Connector resolution failed", {
+          reason: isCredentialError ? "missing_or_invalid_resend_connector" : "gateway_error",
+          connector_id: "resend",
+          http_status: resp.status,
+          error_body: errBody,
+          message_id: messageId,
+        });
         await adminClient
           .from("support_messages")
           .update({ status: "failed", error: errMsg })
           .eq("id", messageId);
-        log("Resend failed", { errMsg });
         return jsonResponse({ error: "Failed to send message. Please try again." }, 502);
       }
 
       resendId = (respJson as { id?: string })?.id ?? null;
+      console.log("[SEND-SUPPORT-MESSAGE] Connector resolved", {
+        connector_id: "resend",
+        message_id: messageId,
+        resend_id: resendId,
+      });
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : "Unknown send error";
       await adminClient
