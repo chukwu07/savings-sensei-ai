@@ -463,6 +463,8 @@ export function More() {
           <AdminPanel />
         </div>
       )}
+
+      <ContactSupportDialog open={supportOpen} onOpenChange={setSupportOpen} />
     </div>
   );
 }
