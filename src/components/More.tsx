@@ -400,16 +400,17 @@ export function More() {
                 </div>
                 
                 <div className="space-y-3">
-                  <a 
-                    href="mailto:support@budgetbuddyai.co.uk"
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => setSupportOpen(true)}
+                    className="w-full text-left flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                   >
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1">
                       <p className="font-medium text-sm">Contact Support</p>
-                      <p className="text-xs text-muted-foreground">support@budgetbuddyai.co.uk</p>
+                      <p className="text-xs text-muted-foreground">Send us a message in-app</p>
                     </div>
-                  </a>
+                  </button>
 
                   <Link 
                     to="/privacy"
