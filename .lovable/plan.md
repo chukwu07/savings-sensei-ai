@@ -1,60 +1,41 @@
-# Simplify Contact Support → mailto
+## Why the button does nothing
 
-Goal: replace the entire email-sending pipeline with a small dialog that lets the user open their email app (or copy the address) to email `support@budgetbuddyai.co.uk` directly. No DNS, no Edge Functions, no provider in the path.
+Two reasons:
 
-## 1. Rewrite `ContactSupportDialog`
+1. **You're testing in the Lovable preview iframe.** The iframe's sandbox silently blocks `window.location.href = "mailto:..."` (top-level navigation). No error appears — it just does nothing.
+2. **Even on the live site, the JS approach is fragile.** Desktop browsers without a configured mail handler will silently ignore `window.location.href = "mailto:..."`. A real anchor tag, by contrast, triggers the OS-level protocol handler and the browser shows its "choose an app" prompt as a fallback.
 
-File: `src/components/support/ContactSupportDialog.tsx`
+## The fix (one file, ~5 lines)
 
-- Strip out: react-hook-form, zod, supabase invoke, all status states, auth check, sign-in redirect.
-- New behavior: small dialog showing the support email with two buttons:
-  - **Open email app** → `window.location.href = "mailto:support@budgetbuddyai.co.uk?subject=BudgetBuddy%20Support%20Request"`
-  - **Copy email** → `navigator.clipboard.writeText("support@budgetbuddyai.co.uk")` + toast "Email copied"
-- Keep the same exported component name and `{ open, onOpenChange }` props so existing call sites in `More.tsx` and `LegalFooter.tsx` keep working unchanged.
-- Works for logged-out users too (no auth gate needed).
+Edit `src/components/support/ContactSupportDialog.tsx`:
 
-## 2. Delete unused frontend code
+- Replace the "Open email app" `<Button onClick={handleOpenEmail}>` with a `<Button asChild>` wrapping a real `<a href={MAILTO_HREF}>` anchor.
+- Delete the `handleOpenEmail` function — no longer needed.
+- Keep `onOpenChange(false)` behavior by adding `onClick={() => onOpenChange(false)}` to the anchor so the dialog closes after click.
 
-- Delete `src/pages/Unsubscribe.tsx`
-- Remove the `/unsubscribe` route + import from `src/App.tsx`
+Result:
+```tsx
+<Button asChild className="w-full sm:w-auto">
+  <a href={MAILTO_HREF} onClick={() => onOpenChange(false)}>
+    <ExternalLink className="h-4 w-4 mr-2" />
+    Open email app
+  </a>
+</Button>
+```
 
-## 3. Delete email Edge Functions
+This works because:
+- Anchors with `mailto:` hand off to the OS, bypassing iframe sandbox restrictions.
+- If no mail client is installed, the browser shows its native picker instead of failing silently.
+- `Button asChild` (Radix `Slot` pattern) keeps the existing button styling.
 
-Remove these function directories entirely:
-- `supabase/functions/send-support-message/`
-- `supabase/functions/send-transactional-email/`
-- `supabase/functions/preview-transactional-email/`
-- `supabase/functions/handle-email-unsubscribe/`
-- `supabase/functions/handle-email-suppression/`
-- `supabase/functions/_shared/transactional-email-templates/` (entire folder, including `registry.ts` and `support-message.tsx`)
+## Important — how to test
 
-Then call `supabase--delete_edge_functions` to remove the deployed copies.
+- The button **may still appear to do nothing inside the Lovable preview iframe** depending on the user's browser, because the iframe context is unusual.
+- **Test on the published site** (`https://www.budgetbuddyai.co.uk`) or open the preview in a new tab. That's the real user environment.
+- On a phone, it will always work — `mailto:` opens the default Mail app instantly.
 
-## 4. Clean `supabase/config.toml`
+## What stays the same
 
-Remove these blocks:
-- `[functions.send-transactional-email]`
-- `[functions.preview-transactional-email]`
-- `[functions.handle-email-unsubscribe]`
-- `[functions.handle-email-suppression]`
-
-(Note: `send-support-message` is not currently in config.toml, so nothing to remove for it there.)
-
-## 5. Keep intact (do NOT touch)
-
-- `support_messages` table — keep as historical record per your note. No new rows will be written; that's fine.
-- `RESEND_API_KEY` secret — leave it. It costs nothing and may be needed later.
-- `notify.www.budgetbuddyai.co.uk` provisioning — leave alone; it's just sitting unused.
-- `send-budget-alerts` Edge Function — unrelated to support flow, untouched.
-
-## 6. Update memory
-
-- Rewrite `mem://tech/email-delivery-architecture` to reflect: "Support contact uses a mailto link to support@budgetbuddyai.co.uk. No Edge Functions, no provider, no DNS in the path. The `support_messages` table is retained for historical data only."
-- Update `mem://index.md` Core: replace the "App Emails: Lovable Emails only…" line with "Support contact: mailto only. No transactional email infrastructure."
-
-## Result
-
-- User clicks "Contact Support" → dialog → "Open email app" → their mail client opens, addressed to `support@budgetbuddyai.co.uk`
-- They send → lands in your Hostinger inbox
-- You reply from `support@budgetbuddyai.co.uk` → goes back to them directly
-- Zero infrastructure to maintain, zero things that can break
+- Dialog UI, copy email button, toasts — unchanged.
+- No infrastructure changes, no new dependencies.
+- "Copy email" remains the reliable fallback for desktop users without a mail client.
