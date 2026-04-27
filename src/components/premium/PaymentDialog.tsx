@@ -139,6 +139,20 @@ export function PaymentDialog({ open, onOpenChange, initialPlan, onSuccess }: Pa
               Try Again
             </button>
           )}
+
+          {clientSecret && !error && (
+            <p className="text-xs text-center text-muted-foreground pt-2">
+              Secure checkout • Payments powered by{" "}
+              <a
+                href="https://stripe.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-foreground"
+              >
+                Stripe
+              </a>
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>
