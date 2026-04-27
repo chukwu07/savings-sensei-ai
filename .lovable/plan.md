@@ -1,27 +1,67 @@
 ## Goal
-Replace the small confirmation dialog with a direct `mailto:` action. Clicking "Contact Support" anywhere in the app will immediately open the user's email client pre-addressed to `support@budgetbuddyai.co.uk` — no popup, no extra click.
+
+Make "Contact Support" reliably open the user's email app on **desktop** (currently silent) by using a real `<a href="mailto:...">` rendered inside the actual button — the only approach guaranteed to satisfy the browser's user-gesture requirement. Add a graceful fallback for desktops with no mail handler.
+
+## Approach: Option A — anchor at call sites
+
+Stop using a state-driven trigger component. Render the `mailto:` link directly inside each "Contact Support" button using shadcn's `asChild` pattern, so the click event itself **is** the navigation event. No `useEffect`, no `useLayoutEffect`, no `window.location`.
 
 ## Changes
 
-### 1. `src/components/support/ContactSupportDialog.tsx` — rewrite as a logic-only trigger
-- Remove the `Dialog`, `DialogContent`, `DialogFooter`, "Copy email" button, and toast logic.
-- Keep the same exported component name and props (`open`, `onOpenChange`) so existing callers in `More.tsx` and `LegalFooter.tsx` keep working without edits.
-- When `open` becomes `true`, immediately:
-  1. Create a hidden `<a href="mailto:support@budgetbuddyai.co.uk?subject=BudgetBuddy%20Support%20Request">` element.
-  2. Programmatically click it (this bypasses iframe sandbox issues better than `window.location.href`, the same reason we switched the button to `<a asChild>` previously).
-  3. Call `onOpenChange(false)` to reset trigger state.
-- Render `null` (no UI).
+### 1. New helper component: `src/components/support/ContactSupportLink.tsx`
 
-### 2. No changes to callers
-- `src/components/More.tsx` and `src/components/legal/LegalFooter.tsx` already toggle the `open` prop — behavior just becomes "fire mailto and close" instead of "show dialog".
+A small presentational wrapper that renders a Button-styled anchor with the mailto and a focus-loss fallback. Props: `children`, `className`, `variant`, plus pass-through.
 
-### 3. Memory update
-- Update `mem://tech/email-delivery-architecture` to note: support flow is now a **direct mailto trigger** (no intermediate dialog, no copy-email fallback in UI).
+```tsx
+<Button asChild variant={variant} className={className}>
+  <a href={MAILTO_HREF} onClick={handleFallback}>{children}</a>
+</Button>
+```
 
-## Trade-offs (confirming you accept these)
-- ✅ One click, instant — matches your "simple and reliable" goal.
-- ⚠️ If a user has no mail client configured, nothing visible happens (browser may show a chooser, or silently do nothing). Acceptable since 99%+ of devices have a default mail handler.
-- ⚠️ Inside the Lovable preview iframe, mailto may still be blocked by sandbox — but it works on the published site (`budgetbuddyai.co.uk`) and on mobile, which is what real users hit.
+Where:
+- `MAILTO_HREF = "mailto:support@budgetbuddyai.co.uk?subject=BudgetBuddy%20Support%20Request"`
+- `handleFallback` schedules a 600ms timer; if `document.hasFocus()` is still true (no mail app intercepted), show a toast: *"No email app detected. Copy support@budgetbuddyai.co.uk"* with a "Copy" action button that writes the address to the clipboard.
 
-## Out of scope
-- No Edge Functions, no Resend, no DNS, no `support_messages` writes — this stays consistent with the existing memory rule.
+Also export a non-Button variant (`ContactSupportTextLink`) for the legal footer's text-link style — same anchor + fallback logic, different className.
+
+### 2. Update call sites
+
+**`src/components/More.tsx`**
+- Remove `supportOpen` state, `setSupportOpen`, and the `<ContactSupportDialog ... />` mount.
+- Replace the row at line ~407 (currently a `<button onClick={() => setSupportOpen(true)}>`) with the new `ContactSupportLink` styled to look identical to the existing row (Mail icon + "Contact Support" + "Send us a message in-app" subtext). Keep the same enhanced-card row layout — just swap the outer interactive element from `<button>` to the anchor-wrapped Button.
+
+**`src/components/legal/LegalFooter.tsx`**
+- Remove `supportOpen` state and `<ContactSupportDialog ... />`.
+- Replace the `<button onClick={() => setSupportOpen(true)}>Contact Support</button>` with `<ContactSupportTextLink>Contact Support</ContactSupportTextLink>` using the same `text-sm text-muted-foreground hover:text-primary transition-colors` styling.
+
+### 3. Delete `src/components/support/ContactSupportDialog.tsx`
+
+No longer used after the two call sites are migrated.
+
+### 4. Update copy in `More.tsx`
+
+The current subtext says "Send us a message in-app" — that's now misleading. Change to "Email us at support@budgetbuddyai.co.uk".
+
+### 5. Memory update
+
+Update `mem://tech/email-delivery-architecture` to record:
+- Contact Support is a **direct anchor `mailto:` link** rendered in the button itself (no effect-driven trigger, no dialog).
+- Desktop fallback: focus-check toast with copy-to-clipboard.
+- Android "Open with" picker is OS-level and not suppressible.
+
+## Why this fixes desktop
+
+Browsers (Chrome/Edge) require `mailto:` navigation to originate from a real user gesture in the same event tick. A native `<a href="mailto:...">` click satisfies this 100% of the time. State → render → effect does not.
+
+## What stays the same (mobile)
+
+- **iOS**: tap → Mail compose with To and Subject pre-filled (your second screenshot). Unchanged.
+- **Android**: tap → "Open with" picker (your first screenshot) → after selecting an app, user lands on the pre-filled compose screen. This OS picker cannot be bypassed by web code.
+
+## Files touched
+
+- `src/components/support/ContactSupportLink.tsx` — new
+- `src/components/More.tsx` — swap trigger, remove state, update subtext
+- `src/components/legal/LegalFooter.tsx` — swap trigger, remove state
+- `src/components/support/ContactSupportDialog.tsx` — delete
+- `mem://tech/email-delivery-architecture` — update
