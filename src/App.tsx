@@ -26,6 +26,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Admin = lazy(() => import("./pages/Admin"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 
 const queryClient = new QueryClient();
 
@@ -138,6 +139,11 @@ const App = () => (
                     <Route path="/reset-password" element={
                       <Suspense fallback={<LoadingFallback />}>
                         <Auth />
+                      </Suspense>
+                    } />
+                    <Route path="/unsubscribe" element={
+                      <Suspense fallback={<LoadingFallback />}>
+                        <Unsubscribe />
                       </Suspense>
                     } />
                     <Route path="/*" element={<AppContent />} />
