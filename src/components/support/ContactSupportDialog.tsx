@@ -23,11 +23,6 @@ interface ContactSupportDialogProps {
 export function ContactSupportDialog({ open, onOpenChange }: ContactSupportDialogProps) {
   const { toast } = useToast();
 
-  const handleOpenEmail = () => {
-    window.location.href = MAILTO_HREF;
-    onOpenChange(false);
-  };
-
   const handleCopyEmail = async () => {
     try {
       await navigator.clipboard.writeText(SUPPORT_EMAIL);
@@ -69,9 +64,11 @@ export function ContactSupportDialog({ open, onOpenChange }: ContactSupportDialo
             <Copy className="h-4 w-4 mr-2" />
             Copy email
           </Button>
-          <Button onClick={handleOpenEmail} className="w-full sm:w-auto">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Open email app
+          <Button asChild className="w-full sm:w-auto">
+            <a href={MAILTO_HREF} onClick={() => onOpenChange(false)}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open email app
+            </a>
           </Button>
         </DialogFooter>
       </DialogContent>
