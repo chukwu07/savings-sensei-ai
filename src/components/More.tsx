@@ -19,14 +19,13 @@ import { ProfileSettings } from "./ProfileSettings";
 import { useQuery } from "@tanstack/react-query";
 import { AdminPanel } from "./AdminPanel";
 import { ReferralDashboard } from "./ReferralDashboard";
-import { ContactSupportDialog } from "./support/ContactSupportDialog";
+import { ContactSupportRow } from "./support/ContactSupportLink";
 
 export function More() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [currentTab, setCurrentTab] = useState("notifications");
   const [showAdmin, setShowAdmin] = useState(false);
-  const [supportOpen, setSupportOpen] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -402,17 +401,13 @@ export function More() {
                 </div>
                 
                 <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => setSupportOpen(true)}
-                    className="w-full text-left flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                  >
+                  <ContactSupportRow>
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1">
                       <p className="font-medium text-sm">Contact Support</p>
-                      <p className="text-xs text-muted-foreground">Send us a message in-app</p>
+                      <p className="text-xs text-muted-foreground">Email us at support@budgetbuddyai.co.uk</p>
                     </div>
-                  </button>
+                  </ContactSupportRow>
 
                   <Link 
                     to="/privacy"
@@ -464,7 +459,6 @@ export function More() {
         </div>
       )}
 
-      <ContactSupportDialog open={supportOpen} onOpenChange={setSupportOpen} />
     </div>
   );
 }

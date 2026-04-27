@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { Separator } from '@/components/ui/separator';
-import { ContactSupportDialog } from '@/components/support/ContactSupportDialog';
+import { ContactSupportTextLink } from '@/components/support/ContactSupportLink';
 
 export function LegalFooter() {
-  const [supportOpen, setSupportOpen] = useState(false);
-
   return (
     <footer className="mt-auto border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 py-6">
@@ -23,14 +21,8 @@ export function LegalFooter() {
             >
               Terms of Service
             </button>
-            <button
-              onClick={() => setSupportOpen(true)}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Contact Support
-            </button>
+            <ContactSupportTextLink>Contact Support</ContactSupportTextLink>
           </div>
-          <ContactSupportDialog open={supportOpen} onOpenChange={setSupportOpen} />
           
           <Separator className="w-32" />
           
