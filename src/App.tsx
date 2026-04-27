@@ -140,11 +140,6 @@ const App = () => (
                         <Auth />
                       </Suspense>
                     } />
-                    <Route path="/unsubscribe" element={
-                      <Suspense fallback={<LoadingFallback />}>
-                        <Unsubscribe />
-                      </Suspense>
-                    } />
                     <Route path="/*" element={<AppContent />} />
                   </Routes>
                 </BrowserRouter>
