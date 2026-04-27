@@ -1,45 +1,99 @@
-## Goal
+# Stripe Trust Layer — 3 Scoped Edits
 
-Anchor-first Contact Support with a smart fallback dialog. The native `mailto:` fires immediately on click for the 90–95% case (instant, zero friction). If — and only if — detection determines no mail app intercepted the click, a polished fallback dialog opens with **Open Gmail (web)** and **Copy email** options.
+Add a minimal, conversion-aware trust layer for Stripe at the moments that matter (checkout + legal docs). No dashboard branding, no footer noise, no logos.
 
-## Behavior
+## What changes (user-facing)
 
-1. **Click Contact Support** → native `<a href="mailto:support@budgetbuddyai.co.uk?subject=...">` fires. iPhone Mail / Android chooser / Outlook / Mail.app open instantly. No UI shown.
-2. **Detection runs in parallel** (600ms after click): if `document.hasFocus() && document.visibilityState === "visible"` is still true, the OS did not hand off → open fallback dialog.
-3. **Fallback dialog** shows:
-   - Title: *"We couldn't open your email app"*
-   - Description: *"You can copy the address below or open Gmail in your browser."*
-   - Click-to-copy email box: `support@budgetbuddyai.co.uk` (clicking the box copies and shows "Copied!")
-   - Primary button **Open Gmail** → `https://mail.google.com/mail/?view=cm&fs=1&to=support@budgetbuddyai.co.uk&su=BudgetBuddy%20Support%20Request` in a new tab (`target="_blank" rel="noopener noreferrer"`). Closes dialog on click.
-   - Secondary button **Copy email** → writes address to clipboard, swaps label to "Copied!" with check icon for ~1s, then auto-closes.
-   - Close (X) always available.
-4. **Mobile layout**: buttons stack `flex-col sm:flex-row`.
+### 1. PaymentDialog — trust line under the form
+A single muted line appears at the bottom of the subscribe dialog, right under the payment form:
 
-## Files touched
+> Secure checkout • Payments powered by Stripe
 
-### `src/components/support/ContactSupportLink.tsx` (rewrite)
+- Small, muted text (`text-xs text-muted-foreground`), centered.
+- "Stripe" links to `https://stripe.com` (new tab, `rel="noopener noreferrer"`).
+- Only renders when `clientSecret && !error` (hidden during loading and error states).
 
-- Restore the click handler that schedules a 600ms timer; clear the timer on unmount and on dialog open.
-- Detection uses **both** `document.hasFocus()` **and** `document.visibilityState === "visible"` to minimize false positives.
-- Run detection only on actual click (not on render).
-- Wrap each trigger in a shadcn `<Dialog>` (controlled via local `useState`). The trigger remains a real `<a href={MAILTO_HREF}>` so native mail handoff still works — the dialog's open state is set imperatively from the timeout callback, not via `DialogTrigger`.
-- Build one shared `<ContactSupportFallbackDialog>` component used by both `ContactSupportRow` and `ContactSupportTextLink` so the dialog markup lives in one place.
-- Keep existing `SUPPORT_EMAIL` and `MAILTO_HREF` constants. Add a `GMAIL_COMPOSE_URL` constant.
-- Email box: rendered as a `<button>` (full-width, bordered, `font-mono text-sm`) so click-to-copy works and is accessible. Uses the same copy logic as the Copy email button.
-- "Copied!" feedback: local `copied` state, `lucide-react` `Check` icon, resets after 1s.
-- Public exports unchanged: `ContactSupportRow` (More page) and `ContactSupportTextLink` (footer). Both keep their current visual styling.
+### 2. Privacy Policy — replace generic Stripe bullet with a clear payments paragraph
+Section 7 ("Third-Party Services") currently lumps Stripe in a generic bullet list. Replace that Stripe bullet with a dedicated paragraph that clearly states:
 
-### `mem://tech/email-delivery-architecture` (update)
+- Payments are processed by Stripe, Inc.
+- We do not store card details on our servers.
+- Stripe is PCI-DSS Level 1 certified and handles all sensitive card data.
+- We receive only a non-sensitive token plus subscription metadata.
+- Link to Stripe's Privacy Policy (`https://stripe.com/privacy`).
 
-Record the final architecture: anchor-first `mailto:` with a 600ms `hasFocus + visibilityState` detection. On detected failure, a fallback dialog opens offering Open Gmail (web) and click-to-copy email. No backend, no edge function. Document that this replaces the previous toast fallback and the brief pure-anchor experiment.
+OpenAI and Supabase bullets remain unchanged.
 
-## What this achieves
+### 3. Terms of Service — one billing-section line
+In Section 5 ("Premium Subscription"), append one short paragraph after the existing bullet list:
 
-- iPhone, iPad, Android, Mac, configured Windows → instant native mail composer, no dialog ever appears.
-- Windows / desktop with no mail handler → polished dialog with two guaranteed-working paths (Gmail web + clipboard copy).
-- No silent failures, no friction for the majority.
+> Payments are processed securely by Stripe, Inc.; we do not store your card details.
 
-## Out of scope
+That's it — no other Terms changes.
 
-- No contact form, no in-app message body, no edge function.
-- No analytics on which path users take (can be added later if useful).
+## What we are NOT doing (intentionally)
+
+- No Stripe branding on Dashboard, Home, More, or Settings.
+- No "Powered by Stripe" in the footer.
+- No Stripe logo / SVG anywhere.
+- No mention on the Landing or About surfaces.
+
+## Technical details
+
+**Files edited (3):**
+
+1. `src/components/premium/PaymentDialog.tsx`
+   - Add a small `<p>` element inside the scrollable content area, after the `<Elements>` block, rendered only when `clientSecret && !error`:
+     ```tsx
+     {clientSecret && !error && (
+       <p className="text-xs text-center text-muted-foreground pt-2">
+         Secure checkout • Payments powered by{" "}
+         <a
+           href="https://stripe.com"
+           target="_blank"
+           rel="noopener noreferrer"
+           className="underline hover:text-foreground"
+         >
+           Stripe
+         </a>
+       </p>
+     )}
+     ```
+
+2. `src/pages/PrivacyPolicy.tsx`
+   - In Section 7, remove the `<li>Stripe for payment processing</li>` bullet.
+   - Below the remaining `<ul>` (OpenAI + Supabase), add:
+     ```tsx
+     <div className="mt-4">
+       <h3 className="font-semibold text-foreground mb-1">Payment processing (Stripe)</h3>
+       <p>
+         All subscription payments are processed by Stripe, Inc. We do not
+         store your card details on our servers. Stripe is PCI-DSS Level 1
+         certified and handles all sensitive payment data on its own
+         infrastructure. When you subscribe, your card information is sent
+         directly to Stripe and we receive only a non-sensitive token plus
+         subscription metadata (plan, status, billing dates). For details on
+         how Stripe processes your data, see the{" "}
+         <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">
+           Stripe Privacy Policy
+         </a>.
+       </p>
+     </div>
+     ```
+
+3. `src/pages/TermsOfService.tsx`
+   - In Section 5 ("Premium Subscription"), after the existing `<ul>`, add:
+     ```tsx
+     <p className="mt-2">
+       Payments are processed securely by Stripe, Inc.; we do not store your
+       card details.
+     </p>
+     ```
+
+**No new dependencies. No new components. No memory updates required** — existing `mem://tech/payment-architecture` already covers Stripe handling; this just surfaces it at the right moments.
+
+## Risk
+
+- Zero runtime risk — all changes are static markup additions.
+- No impact on payment flow, Stripe Elements, webhooks, subscriptions, or RLS.
+- Safe to ship as a single change.

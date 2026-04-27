@@ -102,11 +102,31 @@ export default function PrivacyPolicy() {
                 <h2 className="text-xl font-semibold text-foreground mb-3">7. Third-Party Services</h2>
                 <p>Our app integrates with third-party services including:</p>
                 <ul className="list-disc list-inside ml-4 space-y-1 mt-2">
-                  <li>Stripe for payment processing</li>
                   <li>OpenAI for AI-powered financial insights</li>
                   <li>Supabase for data storage and authentication</li>
                 </ul>
                 <p className="mt-2">These services have their own privacy policies that govern their use of your information.</p>
+
+                <div className="mt-4">
+                  <h3 className="font-semibold text-foreground mb-1">Payment processing (Stripe)</h3>
+                  <p>
+                    All subscription payments are processed by Stripe, Inc. We do not
+                    store your card details on our servers. Stripe is PCI-DSS Level 1
+                    certified and handles all sensitive payment data on its own
+                    infrastructure. When you subscribe, your card information is sent
+                    directly to Stripe and we receive only a non-sensitive token plus
+                    subscription metadata (plan, status, billing dates). For details on
+                    how Stripe processes your data, see the{" "}
+                    <a
+                      href="https://stripe.com/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      Stripe Privacy Policy
+                    </a>.
+                  </p>
+                </div>
               </section>
 
               <section>

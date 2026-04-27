@@ -84,6 +84,10 @@ export default function TermsOfService() {
                     <li>Refunds are provided according to our refund policy</li>
                     <li>Premium features are disabled upon cancellation</li>
                   </ul>
+                  <p className="mt-2">
+                    Payments are processed securely by Stripe, Inc.; we do not store
+                    your card details.
+                  </p>
                 </div>
               </section>
 
