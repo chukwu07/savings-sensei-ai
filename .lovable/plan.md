@@ -1,93 +1,92 @@
-# Plan — Subdomain DNS approach (safe for Hostinger)
+# Phase 1 — Unblock Support Email Delivery
 
-## Why this works
+**Scope:** Get the Contact Support form actually delivering to `support@budgetbuddyai.co.uk` (Hostinger inbox). Nothing else. Phase 2 hardening (replay worker, correlation IDs, etc.) is deliberately out of scope and will be its own plan after we see a real email land.
 
-You add Resend records on a **brand-new subdomain** (`mail.budgetbuddyai.co.uk`) only. Your existing Hostinger setup on the **root domain** (`budgetbuddyai.co.uk`) — MX records, SPF, your inbox at `support@budgetbuddyai.co.uk` — is **not touched**. The two zones are independent, so your inbox keeps working exactly as it does today.
+**Provider decision:** Lovable Emails (not Resend domain verification). Reasons:
+- Eliminates the Resend sandbox class of failure permanently
+- Built-in queue, retries (429/5xx), suppression, dead-letter — most of "Phase 2" comes for free
+- Clean DNS: only delegates a subdomain; root domain MX (Hostinger inbox) stays untouched
 
-End result:
-- App sends **from** `support@mail.budgetbuddyai.co.uk` (Resend, branded, no sandbox limit)
-- Your team replies **to** `support@budgetbuddyai.co.uk` (Hostinger, unchanged)
-- Reply-To is set to the user's email so you reply directly to them
-
----
-
-## Step 1 — You add the domain in Resend (manual, ~2 min)
-
-1. Resend dashboard → **Domains** → **Add Domain**
-2. Enter exactly: `mail.budgetbuddyai.co.uk`
-3. Region: pick the closest (EU recommended for UK users)
-4. Resend shows you 3–4 DNS records (TXT for SPF, CNAME for DKIM, optional MX for bounce tracking, optional DMARC)
-
-**Leave the page open** — you'll need to paste those records into Hostinger.
+**Trade-off accepted:** Outbound `From:` becomes `support@notify.budgetbuddyai.co.uk` instead of `support@budgetbuddyai.co.uk`. `Reply-To` is set to the user's email, so replying from the Hostinger inbox still goes to the user. Functionally identical for the support workflow.
 
 ---
 
-## Step 2 — You add the records in Hostinger (manual, ~3 min)
+## Current state (verified by inspection)
 
-In Hostinger → **Domains → DNS / Nameservers → DNS Zone Editor** for `budgetbuddyai.co.uk`:
-
-For each record Resend gave you, paste the **Name** and **Value** exactly. Important Hostinger quirk:
-- If Resend says Name = `mail`, you enter `mail` (Hostinger auto-appends `.budgetbuddyai.co.uk`)
-- If Resend says Name = `resend._domainkey.mail`, enter exactly that (Hostinger appends the rest)
-- **Do NOT touch any existing MX, A, or TXT records on the root** — only add the new ones Resend specifies
-
-Save. Wait 1–10 minutes.
-
-**Safety check:** None of these records have Name = `@` or Name = empty. They all start with `mail` or end with `.mail`. That's the guarantee your root domain stays untouched.
+- `supabase/functions/send-support-message/index.ts` sends via Resend connector gateway with `from: "BudgetBuddy Support <onboarding@resend.dev>"` → returns 403 (sandbox restriction).
+- `support_messages` table exists with status state machine (`pending` / `sent` / `failed`) and stores `resend_id` + `error`. **This stays.**
+- `src/components/support/ContactSupportDialog.tsx` calls `send-support-message` via `supabase.functions.invoke`. **No client changes needed.**
+- An unrelated email domain exists in the workspace: `notify.amoriagift.uk` (pending DNS) — leftover from another project. We will add a new domain on the correct root: `notify.budgetbuddyai.co.uk`.
 
 ---
 
-## Step 3 — You click "Verify" in Resend
+## What I will do (after approval)
 
-Once verified (green checkmark), tell me and I'll do step 4.
+### Step 1 — Provision Lovable Emails on `notify.budgetbuddyai.co.uk`
+Trigger the email domain setup dialog so you can add the new sender domain. This produces 2 NS records that you paste into Hostinger DNS for the `notify` host. Root domain MX records (your inbox) are not touched.
 
----
+### Step 2 — Set up email infrastructure
+Create the queue, dispatcher, send log, suppression table, and pg_cron job that processes the queue every 5 seconds. This is a one-shot tool call — no SQL written by hand.
 
-## Step 4 — I update the Edge Function (one-line change)
+### Step 3 — Rewrite `send-support-message` Edge Function
+Replace the Resend-via-connector send path with `supabase.functions.invoke('send-transactional-email', ...)`. Keep:
+- Manual JWT validation
+- Zod body validation
+- Per-user (5/hour) and per-IP (20/hour) rate limiting
+- `support_messages` row inserted as `pending` before send
+- Status updated to `sent` / `failed` after send
+- The `resend_id` column is repurposed to store the transactional run ID (or we add a new column — small migration). I'll go with: add a nullable `email_message_id text` column and stop writing to `resend_id`. No data loss.
 
-In `supabase/functions/send-support-message/index.ts` line 196, change:
+### Step 4 — Create the support-message email template
+A React Email template at `supabase/functions/_shared/transactional-email-templates/support-message.tsx`:
+- **Recipient:** `support@budgetbuddyai.co.uk` (your Hostinger inbox)
+- **Reply-To:** the user's email (set per-send)
+- **Subject:** `[Support] {user-supplied subject}` (or `[UNVERIFIED EMAIL] [Support] …` when `email_confirmed_at` is null — preserves existing behaviour)
+- **Body:** matches the current HTML — From, User ID, Route, User-Agent, Message ID, Subject, Message
+- Registered in `_shared/transactional-email-templates/registry.ts` as `support-message`
 
-```ts
-from: "BudgetBuddy Support <onboarding@resend.dev>",
-```
+### Step 5 — Deploy and smoke-test
+Deploy `send-support-message` and `send-transactional-email`. Then I'll trigger one test send via the Edge Function curl tool to confirm:
+- Row inserted as `pending`
+- Email queued, then dispatched
+- `support_messages` row updated to `sent`
+- You confirm the email arrived in `support@budgetbuddyai.co.uk`
 
-to:
-
-```ts
-from: "BudgetBuddy Support <support@mail.budgetbuddyai.co.uk>",
-```
-
-The `to` address (`support@budgetbuddyai.co.uk`) and Reply-To logic stay exactly as they are.
-
-Then I redeploy `send-support-message`.
-
----
-
-## Step 5 — I smoke-test
-
-- Trigger the Contact Support dialog from the app
-- Check `support_messages` row goes to `status = 'sent'` with a `resend_id`
-- Check the email arrives in your `support@budgetbuddyai.co.uk` Hostinger inbox
-- Check Reply-To shows the user's email so you can reply directly
-
----
-
-## What I need from you to start
-
-Just two things, in this order:
-1. Confirm "go ahead" so I switch out of plan mode
-2. Then **you** complete Steps 1–3 (Resend dashboard + Hostinger DNS + verify)
-
-I'll handle Steps 4–5 the moment you tell me Resend shows the domain as verified.
+### Step 6 — Clean up
+- Remove the Resend connector references from `send-support-message` (the connector itself can stay linked at workspace level — it's just unused)
+- Leave `notify.amoriagift.uk` alone (it belongs to another project; not ours to remove)
 
 ---
 
-## Failure modes to know
+## What you (the user) need to do
 
-| If this happens | Cause | Fix |
-|---|---|---|
-| Resend says "DNS not found" after 1 hour | Records pasted with wrong Name (e.g., included full FQDN twice) | Re-check Hostinger entries — Name should not contain `.budgetbuddyai.co.uk` |
-| Hostinger inbox stops working | Only possible if you accidentally edited the root MX records | Restore root MX records to Hostinger defaults |
-| Email lands in spam | DKIM not yet propagated, or DMARC missing | Wait 24h, optionally add DMARC TXT record Resend suggests |
+**Only one manual step:** When the email setup dialog appears, follow it to add the 2 NS records into your Hostinger DNS Zone Editor for the `notify` host. That's it. No SPF, no DKIM, no MX changes — Lovable manages all of that on the delegated subdomain.
 
-Nothing in Step 4 (the code change) can break your inbox — it only changes what address the app sends *from*.
+**DNS propagation:** Can take up to 72 hours, but typically minutes-to-hours on Hostinger. The Edge Function deploy and code changes do **not** wait on DNS — once DNS verifies, queued emails start flowing automatically. If you submit a test before DNS is verified, the email queues as `pending` and sends as soon as verification completes.
+
+---
+
+## What is explicitly NOT in this plan (Phase 2, separate approval)
+
+- Replay/retry worker UI
+- `correlation_id` threading across submit → enqueue → send → log
+- Renaming `support_messages` → `messages` (generic table)
+- Splitting ingestion and delivery into two separate Edge Functions
+- Rate-limit table cleanup / TTL
+- Admin dashboard for failed sends
+- Switching to a real broker queue (pg-boss / Supabase Queues)
+
+We revisit those only after Phase 1 is sending real emails and you've used it for a few real support requests.
+
+---
+
+## Acceptance criteria
+
+1. ✅ A signed-in user submits the Contact Support form
+2. ✅ A row appears in `support_messages` with `status = 'pending'`
+3. ✅ Within ~10 seconds, the row updates to `status = 'sent'`
+4. ✅ The email arrives in your Hostinger inbox at `support@budgetbuddyai.co.uk`
+5. ✅ Replying from Hostinger goes to the user's email (Reply-To works)
+6. ✅ No 403, no Resend sandbox errors anywhere in the Edge Function logs
+
+If any of these fails, I troubleshoot before declaring Phase 1 done.
