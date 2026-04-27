@@ -1,6 +1,14 @@
 // Send Support Message Edge Function
-// Auth strategy: verify_jwt = false in config.toml; we manually validate the JWT
-// here so it's the single source of truth (easier to debug than dual enforcement).
+//
+// Architecture (Phase 1 — Lovable Emails delivery):
+//   1. Ingestion:    manual JWT auth, Zod validation, per-user/IP rate limiting
+//   2. Persistence:  insert pending row into support_messages (audit trail)
+//   3. Delivery:     invoke send-transactional-email (queue-backed, retries automatic)
+//   4. Status:       update support_messages with sent/failed + queue message_id
+//
+// We keep this function as the orchestrator (auth, validation, rate-limit,
+// audit log) and delegate the actual SMTP/HTTP send to Lovable's queue
+// pipeline. The `resend_id` column now stores the Lovable queue message ID.
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -10,6 +18,8 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const SUPPORT_INBOX = "support@budgetbuddyai.co.uk";
 
 const log = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
@@ -24,13 +34,13 @@ const BodySchema = z.object({
 
 // In-memory rate-limit stores. Reset per cold start — acceptable for a low-volume
 // support endpoint. User-id limit is the primary control; IP limit is best-effort
-// defence-in-depth (x-forwarded-for can be spoofed in some setups).
+// defence-in-depth.
 type Bucket = { count: number; resetAt: number };
 const userBuckets = new Map<string, Bucket>();
 const ipBuckets = new Map<string, Bucket>();
 const HOUR = 60 * 60 * 1000;
-const USER_LIMIT = 5; // primary control: 5 per hour per authenticated user
-const IP_LIMIT = 20; // soft backstop only
+const USER_LIMIT = 5;
+const IP_LIMIT = 20;
 
 function checkBucket(map: Map<string, Bucket>, key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
@@ -48,7 +58,6 @@ async function ipKey(req: Request): Promise<string> {
   const fwd = req.headers.get("x-forwarded-for") ?? "unknown";
   const ip = fwd.split(",")[0].trim();
   const ua = req.headers.get("user-agent") ?? "unknown";
-  // Hash so we don't keep raw IP+UA in memory.
   const data = new TextEncoder().encode(`${ip}|${ua}`);
   const buf = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
@@ -84,7 +93,6 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
-    // Use anon-key client just to validate the user token.
     const userClient = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false },
       global: { headers: { Authorization: `Bearer ${token}` } },
@@ -133,7 +141,7 @@ serve(async (req) => {
     const { subject, message, route } = parsed.data;
     const userAgent = req.headers.get("user-agent") ?? null;
 
-    // 4. Insert pending row using service-role client (bypasses RLS — by design)
+    // 4. Insert pending row (audit trail / source of truth)
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
@@ -159,108 +167,51 @@ serve(async (req) => {
     const messageId = inserted.id;
     log("Inserted pending row", { id: messageId });
 
-    // 5. Send via Resend (through Lovable connector gateway)
-    // Connector secret is bound by the workspace connector registry — registry is the single source of truth.
-    // Prefer RESEND_API_KEY_1 (newly linked connector) and fall back to RESEND_API_KEY for backwards compatibility.
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-    const resendKey = Deno.env.get("RESEND_API_KEY_1") ?? Deno.env.get("RESEND_API_KEY");
-    if (!lovableKey || !resendKey) {
-      const errMsg = "Email provider not configured";
-      await adminClient
-        .from("support_messages")
-        .update({ status: "failed", error: errMsg })
-        .eq("id", messageId);
-      return jsonResponse({ error: errMsg }, 500);
-    }
-
-    const subjectPrefix = emailVerified ? "[Support]" : "[UNVERIFIED EMAIL] [Support]";
-    const escapedMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
-    const html = `
-      <div style="font-family:system-ui,sans-serif;max-width:600px">
-        <h2 style="margin:0 0 16px">New support request</h2>
-        <table style="border-collapse:collapse;font-size:14px;margin-bottom:16px">
-          <tr><td style="padding:4px 12px 4px 0;color:#666">From</td><td>${userEmail}${emailVerified ? "" : " <em>(UNVERIFIED)</em>"}</td></tr>
-          <tr><td style="padding:4px 12px 4px 0;color:#666">User ID</td><td><code>${user.id}</code></td></tr>
-          <tr><td style="padding:4px 12px 4px 0;color:#666">Route</td><td>${route ?? "—"}</td></tr>
-          <tr><td style="padding:4px 12px 4px 0;color:#666">User-Agent</td><td style="font-size:12px;color:#666">${userAgent ?? "—"}</td></tr>
-          <tr><td style="padding:4px 12px 4px 0;color:#666">Message ID</td><td><code>${messageId}</code></td></tr>
-        </table>
-        <h3 style="margin:0 0 8px">Subject</h3>
-        <p style="margin:0 0 16px">${subject.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
-        <h3 style="margin:0 0 8px">Message</h3>
-        <div style="white-space:pre-wrap;background:#f6f8fa;padding:12px;border-radius:6px">${escapedMessage}</div>
-      </div>
-    `;
-
-    const emailPayload: Record<string, unknown> = {
-      from: "BudgetBuddy Support <onboarding@resend.dev>",
-      to: ["support@budgetbuddyai.co.uk"],
-      subject: `${subjectPrefix} ${subject}`,
-      html,
-    };
-    // Only set Reply-To when the user's email is verified — otherwise reply could be spoofed.
-    if (emailVerified) {
-      emailPayload.reply_to = userEmail;
-    }
-
-    let resendId: string | null = null;
-    try {
-      const resp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${lovableKey}`,
-          "X-Connection-Api-Key": resendKey,
+    // 5. Hand off to Lovable Emails queue via send-transactional-email.
+    // The queue handles retries, rate-limit backoff, and dead-letter routing.
+    const { data: sendData, error: sendError } = await adminClient.functions.invoke(
+      "send-transactional-email",
+      {
+        body: {
+          templateName: "support-message",
+          recipientEmail: SUPPORT_INBOX,
+          idempotencyKey: `support-${messageId}`,
+          templateData: {
+            userEmail,
+            userId: user.id,
+            emailVerified,
+            subject,
+            message,
+            route: route ?? null,
+            userAgent,
+            messageId,
+          },
         },
-        body: JSON.stringify(emailPayload),
-      });
+      },
+    );
 
-      const respJson = await resp.json().catch(() => ({} as Record<string, unknown>));
-
-      if (!resp.ok) {
-        const errBody = JSON.stringify(respJson).slice(0, 500);
-        const errMsg = (respJson as { message?: string })?.message ?? `Resend HTTP ${resp.status}`;
-        // Resolution-based failure log — distinguishes missing/invalid connector binding from generic gateway errors.
-        const isCredentialError =
-          resp.status === 401 ||
-          resp.status === 404 ||
-          errBody.includes("Credential not found");
-        console.error("[SEND-SUPPORT-MESSAGE] Connector resolution failed", {
-          reason: isCredentialError ? "missing_or_invalid_resend_connector" : "gateway_error",
-          connector_id: "resend",
-          http_status: resp.status,
-          error_body: errBody,
-          message_id: messageId,
-        });
-        await adminClient
-          .from("support_messages")
-          .update({ status: "failed", error: errMsg })
-          .eq("id", messageId);
-        return jsonResponse({ error: "Failed to send message. Please try again." }, 502);
-      }
-
-      resendId = (respJson as { id?: string })?.id ?? null;
-      console.log("[SEND-SUPPORT-MESSAGE] Connector resolved", {
-        connector_id: "resend",
-        message_id: messageId,
-        resend_id: resendId,
-      });
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Unknown send error";
+    if (sendError) {
+      const errMsg = sendError.message ?? "Failed to enqueue email";
+      log("Enqueue failed", { errMsg });
       await adminClient
         .from("support_messages")
-        .update({ status: "failed", error: errMsg })
+        .update({ status: "failed", error: errMsg.slice(0, 500) })
         .eq("id", messageId);
-      log("Resend threw", { errMsg });
       return jsonResponse({ error: "Failed to send message. Please try again." }, 502);
     }
 
+    // The transactional sender returns its queue message_id as `messageId` (camelCase).
+    const queueMessageId =
+      (sendData as { messageId?: string; message_id?: string })?.messageId ??
+      (sendData as { messageId?: string; message_id?: string })?.message_id ??
+      null;
+
     await adminClient
       .from("support_messages")
-      .update({ status: "sent", resend_id: resendId })
+      .update({ status: "sent", resend_id: queueMessageId })
       .eq("id", messageId);
 
-    log("Sent successfully", { id: messageId, resendId });
+    log("Enqueued for delivery", { id: messageId, queueMessageId });
     return jsonResponse({ ok: true, id: messageId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
