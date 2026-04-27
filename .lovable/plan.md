@@ -1,92 +1,60 @@
-# Phase 1 — Unblock Support Email Delivery
+# Simplify Contact Support → mailto
 
-**Scope:** Get the Contact Support form actually delivering to `support@budgetbuddyai.co.uk` (Hostinger inbox). Nothing else. Phase 2 hardening (replay worker, correlation IDs, etc.) is deliberately out of scope and will be its own plan after we see a real email land.
+Goal: replace the entire email-sending pipeline with a small dialog that lets the user open their email app (or copy the address) to email `support@budgetbuddyai.co.uk` directly. No DNS, no Edge Functions, no provider in the path.
 
-**Provider decision:** Lovable Emails (not Resend domain verification). Reasons:
-- Eliminates the Resend sandbox class of failure permanently
-- Built-in queue, retries (429/5xx), suppression, dead-letter — most of "Phase 2" comes for free
-- Clean DNS: only delegates a subdomain; root domain MX (Hostinger inbox) stays untouched
+## 1. Rewrite `ContactSupportDialog`
 
-**Trade-off accepted:** Outbound `From:` becomes `support@notify.budgetbuddyai.co.uk` instead of `support@budgetbuddyai.co.uk`. `Reply-To` is set to the user's email, so replying from the Hostinger inbox still goes to the user. Functionally identical for the support workflow.
+File: `src/components/support/ContactSupportDialog.tsx`
 
----
+- Strip out: react-hook-form, zod, supabase invoke, all status states, auth check, sign-in redirect.
+- New behavior: small dialog showing the support email with two buttons:
+  - **Open email app** → `window.location.href = "mailto:support@budgetbuddyai.co.uk?subject=BudgetBuddy%20Support%20Request"`
+  - **Copy email** → `navigator.clipboard.writeText("support@budgetbuddyai.co.uk")` + toast "Email copied"
+- Keep the same exported component name and `{ open, onOpenChange }` props so existing call sites in `More.tsx` and `LegalFooter.tsx` keep working unchanged.
+- Works for logged-out users too (no auth gate needed).
 
-## Current state (verified by inspection)
+## 2. Delete unused frontend code
 
-- `supabase/functions/send-support-message/index.ts` sends via Resend connector gateway with `from: "BudgetBuddy Support <onboarding@resend.dev>"` → returns 403 (sandbox restriction).
-- `support_messages` table exists with status state machine (`pending` / `sent` / `failed`) and stores `resend_id` + `error`. **This stays.**
-- `src/components/support/ContactSupportDialog.tsx` calls `send-support-message` via `supabase.functions.invoke`. **No client changes needed.**
-- An unrelated email domain exists in the workspace: `notify.amoriagift.uk` (pending DNS) — leftover from another project. We will add a new domain on the correct root: `notify.budgetbuddyai.co.uk`.
+- Delete `src/pages/Unsubscribe.tsx`
+- Remove the `/unsubscribe` route + import from `src/App.tsx`
 
----
+## 3. Delete email Edge Functions
 
-## What I will do (after approval)
+Remove these function directories entirely:
+- `supabase/functions/send-support-message/`
+- `supabase/functions/send-transactional-email/`
+- `supabase/functions/preview-transactional-email/`
+- `supabase/functions/handle-email-unsubscribe/`
+- `supabase/functions/handle-email-suppression/`
+- `supabase/functions/_shared/transactional-email-templates/` (entire folder, including `registry.ts` and `support-message.tsx`)
 
-### Step 1 — Provision Lovable Emails on `notify.budgetbuddyai.co.uk`
-Trigger the email domain setup dialog so you can add the new sender domain. This produces 2 NS records that you paste into Hostinger DNS for the `notify` host. Root domain MX records (your inbox) are not touched.
+Then call `supabase--delete_edge_functions` to remove the deployed copies.
 
-### Step 2 — Set up email infrastructure
-Create the queue, dispatcher, send log, suppression table, and pg_cron job that processes the queue every 5 seconds. This is a one-shot tool call — no SQL written by hand.
+## 4. Clean `supabase/config.toml`
 
-### Step 3 — Rewrite `send-support-message` Edge Function
-Replace the Resend-via-connector send path with `supabase.functions.invoke('send-transactional-email', ...)`. Keep:
-- Manual JWT validation
-- Zod body validation
-- Per-user (5/hour) and per-IP (20/hour) rate limiting
-- `support_messages` row inserted as `pending` before send
-- Status updated to `sent` / `failed` after send
-- The `resend_id` column is repurposed to store the transactional run ID (or we add a new column — small migration). I'll go with: add a nullable `email_message_id text` column and stop writing to `resend_id`. No data loss.
+Remove these blocks:
+- `[functions.send-transactional-email]`
+- `[functions.preview-transactional-email]`
+- `[functions.handle-email-unsubscribe]`
+- `[functions.handle-email-suppression]`
 
-### Step 4 — Create the support-message email template
-A React Email template at `supabase/functions/_shared/transactional-email-templates/support-message.tsx`:
-- **Recipient:** `support@budgetbuddyai.co.uk` (your Hostinger inbox)
-- **Reply-To:** the user's email (set per-send)
-- **Subject:** `[Support] {user-supplied subject}` (or `[UNVERIFIED EMAIL] [Support] …` when `email_confirmed_at` is null — preserves existing behaviour)
-- **Body:** matches the current HTML — From, User ID, Route, User-Agent, Message ID, Subject, Message
-- Registered in `_shared/transactional-email-templates/registry.ts` as `support-message`
+(Note: `send-support-message` is not currently in config.toml, so nothing to remove for it there.)
 
-### Step 5 — Deploy and smoke-test
-Deploy `send-support-message` and `send-transactional-email`. Then I'll trigger one test send via the Edge Function curl tool to confirm:
-- Row inserted as `pending`
-- Email queued, then dispatched
-- `support_messages` row updated to `sent`
-- You confirm the email arrived in `support@budgetbuddyai.co.uk`
+## 5. Keep intact (do NOT touch)
 
-### Step 6 — Clean up
-- Remove the Resend connector references from `send-support-message` (the connector itself can stay linked at workspace level — it's just unused)
-- Leave `notify.amoriagift.uk` alone (it belongs to another project; not ours to remove)
+- `support_messages` table — keep as historical record per your note. No new rows will be written; that's fine.
+- `RESEND_API_KEY` secret — leave it. It costs nothing and may be needed later.
+- `notify.www.budgetbuddyai.co.uk` provisioning — leave alone; it's just sitting unused.
+- `send-budget-alerts` Edge Function — unrelated to support flow, untouched.
 
----
+## 6. Update memory
 
-## What you (the user) need to do
+- Rewrite `mem://tech/email-delivery-architecture` to reflect: "Support contact uses a mailto link to support@budgetbuddyai.co.uk. No Edge Functions, no provider, no DNS in the path. The `support_messages` table is retained for historical data only."
+- Update `mem://index.md` Core: replace the "App Emails: Lovable Emails only…" line with "Support contact: mailto only. No transactional email infrastructure."
 
-**Only one manual step:** When the email setup dialog appears, follow it to add the 2 NS records into your Hostinger DNS Zone Editor for the `notify` host. That's it. No SPF, no DKIM, no MX changes — Lovable manages all of that on the delegated subdomain.
+## Result
 
-**DNS propagation:** Can take up to 72 hours, but typically minutes-to-hours on Hostinger. The Edge Function deploy and code changes do **not** wait on DNS — once DNS verifies, queued emails start flowing automatically. If you submit a test before DNS is verified, the email queues as `pending` and sends as soon as verification completes.
-
----
-
-## What is explicitly NOT in this plan (Phase 2, separate approval)
-
-- Replay/retry worker UI
-- `correlation_id` threading across submit → enqueue → send → log
-- Renaming `support_messages` → `messages` (generic table)
-- Splitting ingestion and delivery into two separate Edge Functions
-- Rate-limit table cleanup / TTL
-- Admin dashboard for failed sends
-- Switching to a real broker queue (pg-boss / Supabase Queues)
-
-We revisit those only after Phase 1 is sending real emails and you've used it for a few real support requests.
-
----
-
-## Acceptance criteria
-
-1. ✅ A signed-in user submits the Contact Support form
-2. ✅ A row appears in `support_messages` with `status = 'pending'`
-3. ✅ Within ~10 seconds, the row updates to `status = 'sent'`
-4. ✅ The email arrives in your Hostinger inbox at `support@budgetbuddyai.co.uk`
-5. ✅ Replying from Hostinger goes to the user's email (Reply-To works)
-6. ✅ No 403, no Resend sandbox errors anywhere in the Edge Function logs
-
-If any of these fails, I troubleshoot before declaring Phase 1 done.
+- User clicks "Contact Support" → dialog → "Open email app" → their mail client opens, addressed to `support@budgetbuddyai.co.uk`
+- They send → lands in your Hostinger inbox
+- You reply from `support@budgetbuddyai.co.uk` → goes back to them directly
+- Zero infrastructure to maintain, zero things that can break
