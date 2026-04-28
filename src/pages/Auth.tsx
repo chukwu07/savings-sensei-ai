@@ -518,6 +518,8 @@ export default function Auth() {
         </p>
       </div>
 
+      {renderGoogleAuthBlock()}
+
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <Label htmlFor="loginEmail" className="text-sm font-medium text-foreground">
