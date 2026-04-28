@@ -23,7 +23,8 @@ export default function Auth() {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const { signIn, signUp, user } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const { toast } = useToast();
 
   // After successful auth, honour ?redirect=<same-origin path> so users return
