@@ -1,99 +1,68 @@
-# Stripe Trust Layer — 3 Scoped Edits
+# Add Google Sign-In to Auth Flow
 
-Add a minimal, conversion-aware trust layer for Stripe at the moments that matter (checkout + legal docs). No dashboard branding, no footer noise, no logos.
+## Heads up
 
-## What changes (user-facing)
+Project memory currently says **"Email/password only. No OAuth."** This plan reverses that. On approval I'll update memory so future changes don't strip the button back out.
 
-### 1. PaymentDialog — trust line under the form
-A single muted line appears at the bottom of the subscribe dialog, right under the payment form:
+## What you'll see
 
-> Secure checkout • Payments powered by Stripe
+Both **Sign In** and **Create Account** screens get a `Continue with Google` button above the email field, then an `or` divider, then the existing form.
 
-- Small, muted text (`text-xs text-muted-foreground`), centered.
-- "Stripe" links to `https://stripe.com` (new tab, `rel="noopener noreferrer"`).
-- Only renders when `clientSecret && !error` (hidden during loading and error states).
+```text
+┌─────────────────────────────────┐
+│  [G]  Continue with Google      │
+├─────────── or ──────────────────┤
+│  Email                          │
+│  [____________________]         │
+│  Password                       │
+│  [____________________]         │
+│  [   Sign In   ]                │
+└─────────────────────────────────┘
+```
 
-### 2. Privacy Policy — replace generic Stripe bullet with a clear payments paragraph
-Section 7 ("Third-Party Services") currently lumps Stripe in a generic bullet list. Replace that Stripe bullet with a dedicated paragraph that clearly states:
+## Required setup (one-time, in Supabase + Google Cloud)
 
-- Payments are processed by Stripe, Inc.
-- We do not store card details on our servers.
-- Stripe is PCI-DSS Level 1 certified and handles all sensitive card data.
-- We receive only a non-sensitive token plus subscription metadata.
-- Link to Stripe's Privacy Policy (`https://stripe.com/privacy`).
+OAuth providers can't be enabled from code. After I ship the code, you'll do:
 
-OpenAI and Supabase bullets remain unchanged.
+1. **Google Cloud Console** → create OAuth 2.0 Client ID (Web application)
+   - Authorized JavaScript origins: `https://budgetbuddyai.co.uk`, `https://www.budgetbuddyai.co.uk`, `https://budgetbuddyai7.lovable.app`, plus the preview URL
+   - Authorized redirect URI: `https://egrljooargciueeppecq.supabase.co/auth/v1/callback`
+2. **Supabase Dashboard → Authentication → Providers → Google** → enable, paste Client ID + Secret
+3. **Supabase Dashboard → Authentication → URL Configuration** → confirm Site URL + add preview/staging URLs to Redirect URLs
 
-### 3. Terms of Service — one billing-section line
-In Section 5 ("Premium Subscription"), append one short paragraph after the existing bullet list:
+Without these, the button shows but Google sign-in fails with "provider not enabled."
 
-> Payments are processed securely by Stripe, Inc.; we do not store your card details.
+## Code changes
 
-That's it — no other Terms changes.
+**1. `src/pages/Auth.tsx`**
+- Pull `signInWithGoogle` from `useAuth()` (already exists in `AuthContext`).
+- Add `googleLoading` state and `handleGoogleSignIn` handler:
+  - Disable the button + show inline spinner while pending
+  - On error, detect known cases and show clearer toast copy:
+    - `provider is not enabled` → "Google sign-in isn't set up yet. Please use email/password."
+    - `popup` / `closed` → "Google sign-in was cancelled."
+    - Anything else → generic friendly message
+- Add Google button (white bg, official Google "G" SVG, full-width, 44px height per mobile standards) above the email field on both `sign-in` and `create-account` screens.
+- Add `or` divider between Google button and the email form.
+- Carry the existing `?redirect=` param through OAuth so post-login redirects keep working (append it to `redirectTo` in the OAuth call).
 
-## What we are NOT doing (intentionally)
+**2. `src/contexts/AuthContext.tsx`** — `signInWithGoogle` already exists. Minor tweak: accept an optional `redirectPath` so `Auth.tsx` can preserve `?redirect=`.
 
-- No Stripe branding on Dashboard, Home, More, or Settings.
-- No "Powered by Stripe" in the footer.
-- No Stripe logo / SVG anywhere.
-- No mention on the Landing or About surfaces.
+**3. Referral code** — already stored in `localStorage`, survives the OAuth round-trip. No change.
 
-## Technical details
+**4. Memory update** — update `mem://auth/authentication-method` and the Core line in `mem://index.md` to: `Email/password + Google OAuth. No email verification.`
 
-**Files edited (3):**
+## Accepted trade-offs
 
-1. `src/components/premium/PaymentDialog.tsx`
-   - Add a small `<p>` element inside the scrollable content area, after the `<Elements>` block, rendered only when `clientSecret && !error`:
-     ```tsx
-     {clientSecret && !error && (
-       <p className="text-xs text-center text-muted-foreground pt-2">
-         Secure checkout • Payments powered by{" "}
-         <a
-           href="https://stripe.com"
-           target="_blank"
-           rel="noopener noreferrer"
-           className="underline hover:text-foreground"
-         >
-           Stripe
-         </a>
-       </p>
-     )}
-     ```
+- **Account duplication**: A user who signed up with email/password and later clicks "Continue with Google" with a different email will get a separate account. Supabase auto-links only when emails match exactly. Not solving account linking now.
+- **External dependency**: Adds Google Cloud + Supabase OAuth config as new failure points.
 
-2. `src/pages/PrivacyPolicy.tsx`
-   - In Section 7, remove the `<li>Stripe for payment processing</li>` bullet.
-   - Below the remaining `<ul>` (OpenAI + Supabase), add:
-     ```tsx
-     <div className="mt-4">
-       <h3 className="font-semibold text-foreground mb-1">Payment processing (Stripe)</h3>
-       <p>
-         All subscription payments are processed by Stripe, Inc. We do not
-         store your card details on our servers. Stripe is PCI-DSS Level 1
-         certified and handles all sensitive payment data on its own
-         infrastructure. When you subscribe, your card information is sent
-         directly to Stripe and we receive only a non-sensitive token plus
-         subscription metadata (plan, status, billing dates). For details on
-         how Stripe processes your data, see the{" "}
-         <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">
-           Stripe Privacy Policy
-         </a>.
-       </p>
-     </div>
-     ```
+## Out of scope
 
-3. `src/pages/TermsOfService.tsx`
-   - In Section 5 ("Premium Subscription"), after the existing `<ul>`, add:
-     ```tsx
-     <p className="mt-2">
-       Payments are processed securely by Stripe, Inc.; we do not store your
-       card details.
-     </p>
-     ```
+- Apple Sign-In
+- Account linking UI
+- Any change to existing email/password flow
 
-**No new dependencies. No new components. No memory updates required** — existing `mem://tech/payment-architecture` already covers Stripe handling; this just surfaces it at the right moments.
+## After you approve
 
-## Risk
-
-- Zero runtime risk — all changes are static markup additions.
-- No impact on payment flow, Stripe Elements, webhooks, subscriptions, or RLS.
-- Safe to ship as a single change.
+I make the code changes, then give you the exact Google Cloud + Supabase Dashboard click-path to finish setup.
