@@ -86,6 +86,43 @@ export default function Auth() {
     }
   }, []);
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      const safeRedirect = redirect && redirect.startsWith("/") && !redirect.startsWith("//")
+        ? redirect
+        : "/";
+
+      const { error } = await signInWithGoogle(safeRedirect);
+
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        let description = "Couldn't start Google sign-in. Please try again or use email.";
+        if (msg.includes("provider") && msg.includes("not enabled")) {
+          description = "Google sign-in isn't set up yet. Please use email & password.";
+        } else if (msg.includes("popup") || msg.includes("closed") || msg.includes("cancel")) {
+          description = "Google sign-in was cancelled.";
+        }
+        toast({
+          title: "Google Sign-In Failed",
+          description,
+          variant: "destructive",
+        });
+        setGoogleLoading(false);
+      }
+      // On success, browser redirects to Google — no need to reset state.
+    } catch (err) {
+      toast({
+        title: "Google Sign-In Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      setGoogleLoading(false);
+    }
+  };
+
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
 
