@@ -10,7 +10,7 @@ export function useOfflineSavingsGoals() {
   const [goals, setGoals] = useState<LocalSavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const { isOnline } = useNetwork();
   const { toast } = useToast();
 
