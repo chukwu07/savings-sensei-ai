@@ -10,7 +10,7 @@ export function useOfflineBudgets() {
   const [budgets, setBudgets] = useState<LocalBudget[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const { isOnline } = useNetwork();
   const { toast } = useToast();
 
