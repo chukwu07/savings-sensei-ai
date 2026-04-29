@@ -10,7 +10,7 @@ export function useOfflineTransactions() {
   const [transactions, setTransactions] = useState<LocalTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const { isOnline } = useNetwork();
   const { toast } = useToast();
 
@@ -29,8 +29,8 @@ export function useOfflineTransactions() {
   };
 
   const syncData = async () => {
-    if (!user || !isOnline || syncing) return;
-
+    if (!sessionReady || !user || !isOnline || syncing) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
     try {
       setSyncing(true);
       await SyncService.performFullSync(user.id);
@@ -102,10 +102,10 @@ export function useOfflineTransactions() {
 
   // Auto-sync when coming back online
   useEffect(() => {
-    if (isOnline && user) {
+    if (sessionReady && isOnline && user) {
       syncData();
     }
-  }, [isOnline, user]);
+  }, [isOnline, user, sessionReady]);
 
   // Initial fetch
   useEffect(() => {

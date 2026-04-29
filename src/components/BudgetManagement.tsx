@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { SmartAlert } from '@/components/enhanced/SmartAlert';
-import { useBudgets } from '@/hooks/useBudgets';
+import { useOfflineBudgets } from '@/hooks/useOfflineBudgets';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useSmartAlerts } from '@/hooks/useSmartAlerts';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -67,8 +67,8 @@ export function BudgetManagement() {
     deleteBudget,
     updateBudgetSpent,
     refetch,
-    emailStatus
-  } = useBudgets();
+  } = useOfflineBudgets();
+  const emailStatus: { success: boolean; message: string } | null = null;
   // ...existing code...
 
   // Show email status message
