@@ -28,21 +28,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionReady, setSessionReady] = useState(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (import.meta.env.DEV) console.log('Auth state change:', event, session?.user ? 'authenticated' : 'anonymous');
-        
+
         // Log authentication events for security monitoring
         securityLogger.logAuthEvent(
-          session?.user?.id || null, 
-          event.toLowerCase(), 
+          session?.user?.id || null,
+          event.toLowerCase(),
           !!session,
           { email: session?.user?.email }
         );
-        
+
         // Only restore session if it's a valid login event or existing session
         if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
           setSession(session);
@@ -50,33 +52,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
           setSession(null);
           setUser(null);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          setSession(session);
+          setUser(session.user);
         }
+        setSessionReady(true);
         setLoading(false);
       }
     );
 
-    // THEN check for existing session with validation
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        if (import.meta.env.DEV) console.error('Session validation error:', error);
-        setSession(null);
-        setUser(null);
+    // THEN check for existing session — guarded against duplicate init
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (error) {
+          if (import.meta.env.DEV) console.error('Session validation error:', error);
+          setSession(null);
+          setUser(null);
+        } else if (session && session.expires_at && new Date(session.expires_at * 1000) > new Date()) {
+          if (import.meta.env.DEV) console.log('Valid session found');
+          setSession(session);
+          setUser(session.user);
+        } else {
+          if (import.meta.env.DEV) console.log('Invalid or expired session, clearing state');
+          setSession(null);
+          setUser(null);
+        }
+        setSessionReady(true);
         setLoading(false);
-        return;
-      }
-      
-      // Only restore if we have a valid, non-expired session
-      if (session && session.expires_at && new Date(session.expires_at * 1000) > new Date()) {
-        if (import.meta.env.DEV) console.log('Valid session found');
-        setSession(session);
-        setUser(session.user);
-      } else {
-        if (import.meta.env.DEV) console.log('Invalid or expired session, clearing state');
-        setSession(null);
-        setUser(null);
-      }
-      setLoading(false);
-    });
+      });
+    }
 
     return () => subscription.unsubscribe();
   }, []);
