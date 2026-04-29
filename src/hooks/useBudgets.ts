@@ -56,10 +56,8 @@ export function useBudgets() {
   };
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const { toast } = useToast();
-
-  const { sessionReady } = useAuth();
 
   const fetchBudgets = async () => {
     if (!user) return;
