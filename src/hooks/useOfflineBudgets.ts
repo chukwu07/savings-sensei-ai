@@ -29,8 +29,8 @@ export function useOfflineBudgets() {
   };
 
   const syncData = async () => {
-    if (!user || !isOnline || syncing) return;
-
+    if (!sessionReady || !user || !isOnline || syncing) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
     try {
       setSyncing(true);
       await SyncService.performFullSync(user.id);
