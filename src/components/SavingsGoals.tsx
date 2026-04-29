@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Target, Plus, Calendar, DollarSign, TrendingUp, Edit2, Trash2, Save, X, CheckCircle, Zap, Trophy, Star, Sparkles, Crown, Check } from "lucide-react";
 import { formatCurrencyShort } from "@/utils/formatters";
-import { useSavingsGoals } from "@/hooks/useSavingsGoals";
+import { useOfflineSavingsGoals } from "@/hooks/useOfflineSavingsGoals";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
