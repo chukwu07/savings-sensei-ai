@@ -102,10 +102,10 @@ export function useOfflineTransactions() {
 
   // Auto-sync when coming back online
   useEffect(() => {
-    if (isOnline && user) {
+    if (sessionReady && isOnline && user) {
       syncData();
     }
-  }, [isOnline, user]);
+  }, [isOnline, user, sessionReady]);
 
   // Initial fetch
   useEffect(() => {
