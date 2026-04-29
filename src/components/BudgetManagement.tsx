@@ -67,8 +67,8 @@ export function BudgetManagement() {
     deleteBudget,
     updateBudgetSpent,
     refetch,
-    emailStatus
-  } = useBudgets();
+  } = useOfflineBudgets();
+  const emailStatus: { success: boolean; message: string } | null = null;
   // ...existing code...
 
   // Show email status message
