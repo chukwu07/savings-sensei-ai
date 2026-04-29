@@ -10,7 +10,7 @@ export function useOfflineTransactions() {
   const [transactions, setTransactions] = useState<LocalTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const { isOnline } = useNetwork();
   const { toast } = useToast();
 
