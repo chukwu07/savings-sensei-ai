@@ -18,7 +18,7 @@ export interface Transaction {
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const { toast } = useToast();
 
   const fetchTransactions = async () => {
