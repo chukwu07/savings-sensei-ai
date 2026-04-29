@@ -54,7 +54,7 @@ export function SavingsGoals() {
     updateGoal,
     updateGoalProgress,
     deleteGoal
-  } = useSavingsGoals();
+  } = useOfflineSavingsGoals();
   const handleAddGoal = async () => {
     // Validate input with Zod
     const result = savingsGoalSchema.safeParse({
