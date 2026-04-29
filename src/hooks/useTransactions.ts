@@ -128,8 +128,17 @@ export function useTransactions() {
   };
 
   useEffect(() => {
-    fetchTransactions();
-  }, [user]);
+    if (!sessionReady || !user) return;
+    const run = async () => {
+      try {
+        await fetchTransactions();
+      } catch (err) {
+        if (import.meta.env.DEV) console.error('Fetch transactions failed, retrying once:', err);
+        setTimeout(fetchTransactions, 500);
+      }
+    };
+    run();
+  }, [user, sessionReady]);
 
   return {
     transactions,
