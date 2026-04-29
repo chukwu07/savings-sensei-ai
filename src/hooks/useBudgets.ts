@@ -116,16 +116,25 @@ export function useBudgets() {
   };
 
   const updateBudgetSpent = async (id: string, spent: number) => {
+    if (!user) {
+      if (import.meta.env.DEV) console.warn('No user session — aborting updateBudgetSpent');
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('budgets')
         .update({ spent })
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      
+      if (error) {
+        if (import.meta.env.DEV) console.error('Supabase updateBudgetSpent error:', error);
+        throw error;
+      }
+      if (!data) throw new Error('No row updated (session missing or RLS blocked)');
+
       setBudgets(prev => prev.map(b => b.id === id ? data : b));
     } catch (error: any) {
       toast({
@@ -137,22 +146,31 @@ export function useBudgets() {
   };
 
   const updateBudget = async (id: string, updates: Partial<Omit<Budget, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
+    if (!user) {
+      if (import.meta.env.DEV) console.warn('No user session — aborting updateBudget');
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('budgets')
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      
+      if (error) {
+        if (import.meta.env.DEV) console.error('Supabase updateBudget error:', error);
+        throw error;
+      }
+      if (!data) throw new Error('No row updated (session missing or RLS blocked)');
+
       setBudgets(prev => prev.map(b => b.id === id ? data : b));
       toast({
         title: "Success",
         description: "Budget updated successfully",
       });
-      
+
       return data;
     } catch (error: any) {
       toast({
@@ -164,20 +182,26 @@ export function useBudgets() {
   };
 
   const deleteBudget = async (id: string) => {
+    if (!user) {
+      if (import.meta.env.DEV) console.warn('No user session — aborting deleteBudget');
+      return;
+    }
     try {
       const { error } = await supabase
         .from('budgets')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
-      
+
       setBudgets(prev => prev.filter(b => b.id !== id));
       toast({
         title: "Success",
         description: "Budget deleted successfully",
       });
     } catch (error: any) {
+      if (import.meta.env.DEV) console.error('Supabase deleteBudget error:', error);
       toast({
         title: "Error",
         description: "Failed to delete budget",
@@ -187,8 +211,17 @@ export function useBudgets() {
   };
 
   useEffect(() => {
-    fetchBudgets();
-  }, [user]);
+    if (!sessionReady || !user) return;
+    const run = async () => {
+      try {
+        await fetchBudgets();
+      } catch (err) {
+        if (import.meta.env.DEV) console.error('Fetch budgets failed, retrying once:', err);
+        setTimeout(fetchBudgets, 500);
+      }
+    };
+    run();
+  }, [user, sessionReady]);
 
   // Persist alertedBudgets to localStorage
   useEffect(() => {
