@@ -17,22 +17,24 @@ export interface SavingsGoal {
 export function useSavingsGoals() {
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, sessionReady } = useAuth();
   const { toast } = useToast();
 
   const fetchGoals = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('savings_goals')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setGoals(data || []);
     } catch (error: any) {
+      if (import.meta.env.DEV) console.error('Failed to fetch savings goals:', error);
       toast({
         title: "Error",
         description: "Failed to fetch savings goals",
@@ -57,13 +59,13 @@ export function useSavingsGoals() {
         .single();
 
       if (error) throw error;
-      
+
       setGoals(prev => [data, ...prev]);
       toast({
         title: "Success",
         description: "Savings goal created successfully",
       });
-      
+
       return data;
     } catch (error: any) {
       const message = error?.message || "";
@@ -79,16 +81,25 @@ export function useSavingsGoals() {
   };
 
   const updateGoalProgress = async (id: string, current_amount: number) => {
+    if (!user) {
+      if (import.meta.env.DEV) console.warn('No user session — aborting updateGoalProgress');
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('savings_goals')
         .update({ current_amount })
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      
+      if (error) {
+        if (import.meta.env.DEV) console.error('Supabase updateGoalProgress error:', error);
+        throw error;
+      }
+      if (!data) throw new Error('No row updated (session missing or RLS blocked)');
+
       setGoals(prev => prev.map(g => g.id === id ? data : g));
       toast({
         title: "Success",
@@ -104,22 +115,31 @@ export function useSavingsGoals() {
   };
 
   const updateGoal = async (id: string, updates: Partial<Omit<SavingsGoal, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
+    if (!user) {
+      if (import.meta.env.DEV) console.warn('No user session — aborting updateGoal');
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('savings_goals')
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      
+      if (error) {
+        if (import.meta.env.DEV) console.error('Supabase updateGoal error:', error);
+        throw error;
+      }
+      if (!data) throw new Error('No row updated (session missing or RLS blocked)');
+
       setGoals(prev => prev.map(g => g.id === id ? data : g));
       toast({
         title: "Success",
         description: "Goal updated successfully",
       });
-      
+
       return data;
     } catch (error: any) {
       toast({
@@ -131,20 +151,26 @@ export function useSavingsGoals() {
   };
 
   const deleteGoal = async (id: string) => {
+    if (!user) {
+      if (import.meta.env.DEV) console.warn('No user session — aborting deleteGoal');
+      return;
+    }
     try {
       const { error } = await supabase
         .from('savings_goals')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
-      
+
       setGoals(prev => prev.filter(g => g.id !== id));
       toast({
         title: "Success",
         description: "Goal deleted successfully",
       });
     } catch (error: any) {
+      if (import.meta.env.DEV) console.error('Supabase deleteGoal error:', error);
       toast({
         title: "Error",
         description: "Failed to delete goal",
@@ -154,8 +180,17 @@ export function useSavingsGoals() {
   };
 
   useEffect(() => {
-    fetchGoals();
-  }, [user]);
+    if (!sessionReady || !user) return;
+    const run = async () => {
+      try {
+        await fetchGoals();
+      } catch (err) {
+        if (import.meta.env.DEV) console.error('Fetch goals failed, retrying once:', err);
+        setTimeout(fetchGoals, 500);
+      }
+    };
+    run();
+  }, [user, sessionReady]);
 
   return {
     goals,
