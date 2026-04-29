@@ -59,19 +59,23 @@ export function useBudgets() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const { sessionReady } = useAuth();
+
   const fetchBudgets = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('budgets')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setBudgets(data || []);
     } catch (error: any) {
+      if (import.meta.env.DEV) console.error('Failed to fetch budgets:', error);
       toast({
         title: "Error",
         description: "Failed to fetch budgets",
