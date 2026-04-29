@@ -103,10 +103,10 @@ export function useOfflineBudgets() {
   };
 
   useEffect(() => {
-    if (isOnline && user) {
+    if (sessionReady && isOnline && user) {
       syncData();
     }
-  }, [isOnline, user]);
+  }, [isOnline, user, sessionReady]);
 
   useEffect(() => {
     fetchBudgets();
