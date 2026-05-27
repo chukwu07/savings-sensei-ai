@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,14 @@ export default function PrivacyPolicy() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
+      <Helmet>
+        <title>Privacy Policy — BudgetBuddy AI</title>
+        <meta name="description" content="How BudgetBuddy AI collects, stores, and protects your personal financial data." />
+        <link rel="canonical" href="https://www.budgetbuddyai.co.uk/privacy" />
+        <meta property="og:title" content="Privacy Policy — BudgetBuddy AI" />
+        <meta property="og:description" content="How BudgetBuddy AI collects, stores, and protects your personal financial data." />
+        <meta property="og:url" content="https://www.budgetbuddyai.co.uk/privacy" />
+      </Helmet>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Button 

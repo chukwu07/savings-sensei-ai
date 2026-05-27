@@ -229,6 +229,7 @@ export function TransactionDateGroupedView({
                               onDeleteTransaction(transaction.id);
                             }}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                            aria-label={`Delete transaction ${transaction.description}`}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
