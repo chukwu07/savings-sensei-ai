@@ -194,6 +194,7 @@ export function TransactionPlainView({
                         size="sm"
                         onClick={() => startEdit(transaction)}
                         className="text-muted-foreground hover:text-foreground"
+                        aria-label={`Edit transaction ${transaction.description}`}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -204,6 +205,7 @@ export function TransactionPlainView({
                       size="sm"
                       onClick={() => onDeleteTransaction(transaction.id)}
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      aria-label={`Delete transaction ${transaction.description}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

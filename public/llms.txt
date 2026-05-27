@@ -1,0 +1,11 @@
+# BudgetBuddy AI
+
+> Smart Personal Finance Management with AI-powered insights — track transactions, manage budgets, and achieve your savings goals.
+
+BudgetBuddy AI is a personal finance web and mobile app for individuals who want a calm, low-stress way to manage money. It combines a Money Hub for transactions, a Smart Budget system, Savings Goals, and an AI Financial Advisor chat. Available on the web, iOS, and Android.
+
+## Pages
+
+- [Home](/): Landing page describing BudgetBuddy AI and its core features.
+- [Privacy Policy](/privacy): How user data is collected, stored, and protected.
+- [Terms of Service](/terms): Legal terms governing use of the BudgetBuddy AI service.

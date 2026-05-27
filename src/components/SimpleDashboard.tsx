@@ -388,7 +388,7 @@ export function SimpleDashboard() {
     return (
       <div className="space-y-6 animate-fade-in">
         <div className="text-center">
-          <h1 className="text-mobile-2xl font-bold mb-2">Getting your money info...</h1>
+          <p className="text-mobile-2xl font-bold mb-2" role="status" aria-live="polite">Getting your money info...</p>
           <div className="animate-pulse space-y-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-20 bg-muted rounded-lg" />
@@ -405,8 +405,8 @@ export function SimpleDashboard() {
       <div className="pt-4 px-4">
         <h1 className="text-lg font-bold text-foreground">
           {userProfile?.display_name 
-            ? `Welcome, ${userProfile.display_name.split(' ')[0]}!`
-            : "Welcome!"
+            ? `Financial Overview — Welcome, ${userProfile.display_name.split(' ')[0]}`
+            : "Financial Overview"
           }
         </h1>
       </div>

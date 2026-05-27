@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,14 @@ export default function TermsOfService() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
+      <Helmet>
+        <title>Terms of Service — BudgetBuddy AI</title>
+        <meta name="description" content="Legal terms governing the use of BudgetBuddy AI's personal finance service." />
+        <link rel="canonical" href="https://www.budgetbuddyai.co.uk/terms" />
+        <meta property="og:title" content="Terms of Service — BudgetBuddy AI" />
+        <meta property="og:description" content="Legal terms governing the use of BudgetBuddy AI's personal finance service." />
+        <meta property="og:url" content="https://www.budgetbuddyai.co.uk/terms" />
+      </Helmet>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Button 

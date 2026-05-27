@@ -316,7 +316,7 @@ export default function Auth() {
           className="w-24 h-24 mx-auto mb-6 drop-shadow-lg"
         />
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          BudgetBuddy AI
+          BudgetBuddy AI — Sign in to your account
         </h1>
         <p className="text-muted-foreground text-sm">
           Your AI-powered financial companion

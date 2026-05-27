@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LogIn, Sparkles, TrendingUp, Shield, Zap } from "lucide-react";
@@ -10,6 +11,14 @@ export default function LandingPage({
   onGetStarted
 }: LandingPageProps) {
   return <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/10 flex flex-col">
+      <Helmet>
+        <title>BudgetBuddy AI — Smart Personal Finance Management</title>
+        <meta name="description" content="Take control of your finances with BudgetBuddy AI — intelligent insights, automated tracking, and personalized recommendations for budgeting and saving." />
+        <link rel="canonical" href="https://www.budgetbuddyai.co.uk/" />
+        <meta property="og:title" content="BudgetBuddy AI — Smart Personal Finance Management" />
+        <meta property="og:description" content="Take control of your finances with BudgetBuddy AI — intelligent insights, automated tracking, and personalized recommendations." />
+        <meta property="og:url" content="https://www.budgetbuddyai.co.uk/" />
+      </Helmet>
       <div className="flex-1">
         <div className="container mx-auto px-4 py-12">
           {/* Hero Section */}
@@ -18,7 +27,7 @@ export default function LandingPage({
               
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              BudgetBuddy AI
+              BudgetBuddy AI — Your AI-Powered Financial Companion
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Your personal AI-powered financial companion. Take control of your finances with intelligent insights, automated tracking, and personalized recommendations.
