@@ -303,7 +303,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="w-full flex overflow-x-auto justify-start gap-1 sm:grid sm:grid-cols-6 [&>*]:whitespace-nowrap">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="promo">Promo Codes</TabsTrigger>
