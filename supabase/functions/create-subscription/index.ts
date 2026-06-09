@@ -69,13 +69,44 @@ serve(async (req) => {
       );
     }
 
-    const { priceId, paymentMethodId, customerId } = validation.data;
+    const { priceId, paymentMethodId } = validation.data;
 
-    logStep('Request data validated', { priceId, customerId });
+    logStep('Request data validated', { priceId });
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     });
+
+    // SECURITY: Derive Stripe customer ID server-side from the authenticated user.
+    // Never accept customerId from the client — that would allow billing manipulation
+    // against another user's Stripe customer.
+    let customerId: string | undefined;
+
+    // 1. Try the subscribers table first
+    const { data: subscriberRow } = await supabaseAdmin
+      .from('subscribers')
+      .select('stripe_customer_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (subscriberRow?.stripe_customer_id) {
+      customerId = subscriberRow.stripe_customer_id;
+    } else {
+      // 2. Fall back to looking up by email in Stripe
+      const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+      } else {
+        // 3. Create a new customer
+        const created = await stripe.customers.create({
+          email: user.email!,
+          metadata: { supabase_user_id: user.id },
+        });
+        customerId = created.id;
+      }
+    }
+
+    logStep('Customer ID resolved server-side', { customerId });
 
     // Attach payment method to customer
     await stripe.paymentMethods.attach(paymentMethodId, {

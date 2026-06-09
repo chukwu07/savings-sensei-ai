@@ -10,10 +10,12 @@ export const aiChatSchema = z.object({
 });
 
 // Stripe subscription creation validation
+// NOTE: customerId is intentionally NOT accepted from the client. It is derived
+// server-side from the authenticated user's email/subscribers record to prevent
+// billing manipulation against other users' Stripe customers.
 export const subscriptionSchema = z.object({
   priceId: z.string().regex(/^price_[a-zA-Z0-9]+$/, 'Invalid Stripe price ID'),
-  paymentMethodId: z.string().regex(/^pm_[a-zA-Z0-9]+$/, 'Invalid payment method ID'),
-  customerId: z.string().regex(/^cus_[a-zA-Z0-9]+$/, 'Invalid customer ID')
+  paymentMethodId: z.string().regex(/^pm_[a-zA-Z0-9]+$/, 'Invalid payment method ID')
 });
 
 // Stripe checkout validation
